@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 
-export interface driveway{
+export interface IDriveway{
     ownerId: Types.ObjectId; 
     address: string;
     walk: string;
