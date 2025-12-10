@@ -1,12 +1,12 @@
 import express from 'express'
 import mongoose from 'mongoose';
 import dotenv from 'dotenv'
-import connect from './DATABASE';
-import spotsRouter from './routes/spotRoutes';
-import errorHandler from './middleware/errorHandler';
-import usersRouter from './routes/userRoutes';
+import spotsRouter from '../../routes/spotRoutes';
+import errorHandler from '../../middleware/errorHandler';
+import usersRouter from '../../routes/userRoutes';
 import cors from 'cors';
 import multer from 'multer'
+import connect from '..';
 
 
 dotenv.config();
