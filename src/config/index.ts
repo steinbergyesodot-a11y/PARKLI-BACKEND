@@ -14,5 +14,8 @@ export const config = {
     },
     users: {
         baseRoute: env.get('USERS_BASE_ROUTE').default('/api/users').asString(),
+    },
+    driveways: {
+         baseRoute: '/api/users'
     }
 }

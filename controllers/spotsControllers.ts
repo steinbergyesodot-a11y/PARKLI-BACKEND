@@ -1,4 +1,3 @@
-import Spot from "../models/spots"
 import { Response,Request, NextFunction } from "express";
 
 
