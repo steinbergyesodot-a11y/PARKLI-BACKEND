@@ -12,4 +12,9 @@ export class UsersManager{
         const user = await userModel.findById(userId)
         return user
     }
+
+    static async getAllUsers(){
+        const users = await userModel.find()
+        return users
+    }
 }

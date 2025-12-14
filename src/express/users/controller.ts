@@ -21,14 +21,11 @@ export async function addUser(req:Request,res:Response){
     }
 }
 
-export async function updateUserById(req:Request,res:Response){
-     
-}
 
 export async function getUserById(req:Request,res:Response){
     const userId = req.params.userId
     if(!userId){
-       return res.status(400).json({Message : "missing user Id."})
+        return res.status(400).json({Message : "missing user Id."})
     }
     if(!mongoose.Types.ObjectId.isValid(userId)) {
         res.status(400).json({ error: "Invalid playerId format" });
@@ -54,9 +51,24 @@ export async function getUserById(req:Request,res:Response){
 
 
 export async function getAllUsers(req:Request,res:Response){
-    
+      try{
+            const users = await UsersManager.getAllUsers()
+            if (users.length === 0) {
+                  return res.status(404).json({ message: "No users found" });
+            }
+            res.status(200).json({users})
+         }catch(error){
+            res.status(500).json({
+                error : "internal server error"
+            })
+         }
 }
 
 export async function deleteUserById(req:Request,res:Response){
 
+}
+
+
+export async function updateUserById(req:Request,res:Response){
+     
 }
