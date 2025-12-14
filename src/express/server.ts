@@ -1,12 +1,11 @@
 import express from 'express'
 import mongoose from 'mongoose';
 import dotenv from 'dotenv'
-import spotsRouter from '../../routes/spotRoutes';
-import errorHandler from '../../middleware/errorHandler';
-import usersRouter from '../../routes/userRoutes';
+// import errorHandler from '../../middleware/errorHandler';
 import cors from 'cors';
 import multer from 'multer'
 import connect from '..';
+import { appRouter } from './router';
 
 
 dotenv.config();
@@ -19,13 +18,12 @@ const app = express();
 
 app.use(express.json());
 
+app.use(appRouter)
+
+
 app.use(cors());
 
-app.use('/spots',spotsRouter)
-
-app.use('/users',usersRouter)
-
-app.use(errorHandler)
+// app.use(errorHandler)
 
 
 
