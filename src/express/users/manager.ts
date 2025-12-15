@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { IUser } from './interface';
 import { userModel } from './model';
+import bcrypt from 'bcrypt'
+
 
 export class UsersManager{
 
@@ -17,4 +19,14 @@ export class UsersManager{
         const users = await userModel.find()
         return users
     }
+
+    static async Login(email: string, password: string){
+        const user = await userModel.findOne({email : email})
+        if(user){
+            const isMatch = await bcrypt.compare(password,user.password)
+            return isMatch
+        }
+    }
+
+    
 }

@@ -1,16 +1,23 @@
-import { Request,Response } from 'express';
+import { NextFunction, Request,Response } from 'express';
 import { UsersManager } from './manager';
 import mongoose from 'mongoose';
+import bcrypt from 'bcrypt'
 
 
 export async function addUser(req:Request,res:Response){
-
-    const {firstName,lastName,email,password} = req.body
+    const {firstName,lastName,email,password} = req.body?? {}
     if(!firstName || !lastName || !email || !password){
         return res.status(400).json({Message : 'You`re missing parameters'})
     }
+
     try{
-        const newUser = await UsersManager.createUser(req.body)
+        const hashedPassword = await bcrypt.hash(password, 10); 
+        const newUser = await UsersManager.createUser({
+            firstName,
+            lastName,
+            email,
+            password : hashedPassword
+        })
         return res.status(201).json({
             "Created new user" : newUser
         })
@@ -71,4 +78,33 @@ export async function deleteUserById(req:Request,res:Response){
 
 export async function updateUserById(req:Request,res:Response){
      
+}
+
+
+export async function Login(req:Request,res:Response,next:NextFunction){
+    const {email,password} = req.body
+
+    if (!email || !password) {
+    res.status(400).json({ error: 'Email and password are required' });
+    }
+    try{
+        const userFound = await UsersManager.Login(email,password)
+        if(!userFound){
+            return res.status(400).json({
+                Message : "Email or password invalid!"
+            })
+        }
+        return res.status(200).json({
+            messgae: "user verified!"
+        })
+
+
+    }catch(error){
+        res.status(500).json({
+            error
+        })
+    }
+
+
+
 }
