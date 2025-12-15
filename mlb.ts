@@ -49,14 +49,9 @@ async function getGames(){
 
       let opponent: string;
 
-      if (game.home_team.id === 20) {
-        opponent = game.visitor_team.full_name;
-      } else if (game.visitor_team.id === 20) {
-        opponent = game.home_team.full_name;
-      } else {
-        opponent = "Unknown Team";
-      }
-
+      
+        opponent = game.away_team_name;
+    
       console.log(`${formattedDate}: vs. ${opponent}`);
     }
   
