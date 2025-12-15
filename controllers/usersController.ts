@@ -35,9 +35,9 @@ dotenv.config();
 //         const payload = {name: user.firstName, id: user._id};
         
         
-//         if (!process.env.JWT_SECRET_KEY) {
-//              throw new Error("JWT_SECRET is not defined in environment variables");
-//         }
+        // if (!process.env.JWT_SECRET_KEY) {
+        //      throw new Error("JWT_SECRET is not defined in environment variables");
+        // }
 
 //         const token = jwt.sign(
 //             payload,

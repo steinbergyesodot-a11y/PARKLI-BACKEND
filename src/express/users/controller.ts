@@ -2,6 +2,8 @@ import { NextFunction, Request,Response } from 'express';
 import { UsersManager } from './manager';
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken';
+
 
 
 export async function addUser(req:Request,res:Response){
@@ -89,22 +91,33 @@ export async function Login(req:Request,res:Response,next:NextFunction){
     }
     try{
         const userFound = await UsersManager.Login(email,password)
-        if(!userFound){
+        if(userFound.success === false){
             return res.status(400).json({
                 Message : "Email or password invalid!"
             })
         }
+        
+        const payload = {name: userFound.user};
+        if (!process.env.JWT_SECRET_KEY) {
+             throw new Error("JWT_SECRET is not defined in environment variables");
+        }
+        
+        const token = jwt.sign(
+            payload,
+            process.env.JWT_SECRET_KEY,
+            {
+            expiresIn: '1h'
+            }
+        )
+
+
         return res.status(200).json({
-            messgae: "user verified!"
-        })
+             message: 'Login successful', token 
+        });
+        
 
 
     }catch(error){
-        res.status(500).json({
-            error
-        })
+       next(error)
     }
-
-
-
 }

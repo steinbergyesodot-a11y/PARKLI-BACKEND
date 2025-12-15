@@ -21,11 +21,23 @@ export class UsersManager{
     }
 
     static async Login(email: string, password: string){
-        const user = await userModel.findOne({email : email})
-        if(user){
-            const isMatch = await bcrypt.compare(password,user.password)
-            return isMatch
+      try{
+        const user = await userModel.findOne({ email });
+        if (!user) {
+          return { success: false, message: "User not found" };
         }
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return { success: false, message: "Invalid credentials" };
+        }
+        return{
+             success: true, user:user
+        };
+    }catch(error){
+          return{
+             success: false, message: "Server error"
+        };
+      }
     }
 
     
