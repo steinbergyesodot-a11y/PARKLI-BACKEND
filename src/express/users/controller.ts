@@ -21,7 +21,7 @@ export async function addUser(req:Request,res:Response){
             password : hashedPassword
         })
         return res.status(201).json({
-            "Created new user" : newUser
+            Message: "Created user successfully!"
         })
     }catch(error){
         return res.status(500).json({
@@ -87,7 +87,7 @@ export async function Login(req:Request,res:Response,next:NextFunction){
     const {email,password} = req.body
 
     if (!email || !password) {
-    res.status(400).json({ error: 'Email and password are required' });
+    return res.status(400).json({ error: 'Email and password are required' });
     }
     try{
         const userFound = await UsersManager.Login(email,password)
@@ -96,8 +96,18 @@ export async function Login(req:Request,res:Response,next:NextFunction){
                 Message : "Email or password invalid!"
             })
         }
+        if (!userFound.success || !userFound.user){ 
+            return res.status(400).json({
+                 message: "Email or password invalid!"
+            });
+        }
         
-        const payload = {name: userFound.user};
+        const payload = {
+            name: userFound.user?.firstName,
+            _id : userFound.user._id
+        };
+
+
         if (!process.env.JWT_SECRET_KEY) {
              throw new Error("JWT_SECRET is not defined in environment variables");
         }

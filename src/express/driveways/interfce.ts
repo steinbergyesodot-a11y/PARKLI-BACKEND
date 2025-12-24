@@ -1,11 +1,23 @@
 import { Types } from "mongoose";
 
-export interface IDriveway{
-    ownerId: Types.ObjectId; 
+
+
+
+
+export interface IGame {
+  visiting_team: string;
+  date: string;
+  booked: boolean
+}
+
+
+
+export interface IDriveway {
+    ownerId: Types.ObjectId;
     address: string;
     walk: string;
-    stadium: string;
     price: number;
     image: string;
-    description: string
+    description: string;
+    games: IGame[];
 }

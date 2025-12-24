@@ -17,5 +17,8 @@ export const config = {
     },
     driveways: {
          baseRoute: '/api/driveways'
+    },
+    bookings: {
+        baseRoute: '/api/bookings'
     }
 }

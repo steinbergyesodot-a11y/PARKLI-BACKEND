@@ -6,16 +6,23 @@ import { drivewayModel } from "./model";
 
 export async function addDriveway(req:Request, res:Response){
     
-    const {ownerId,address,walk,stadium,price,image,description} = req.body
-    if(!ownerId || !address || !walk || !stadium || !price || !image || !description){
-        return res.status(400).json({Message : 'You`re missing parameters'})
+    
+    const {ownerId,address,walk,price,image,description} = req.body
+    if(!ownerId || !address || !walk || !price || !image || !description){
+        return res.status(400).json({message : 'You`re missing parameters'})
     }
-     try{
+   
+    if(!mongoose.Types.ObjectId.isValid(ownerId)){
+        return res.status(400).json({message : "invalid owner id"})
+    }
+    try{
         const newDriveway = await DrivewayManager.createDriveway(req.body)
         return res.status(201).json({
-            "Created new driveway" : newDriveway
+            message : "Created new driveway",
+            newDriveway
         })
         }catch(error){
+            console.error("error",error)
             return res.status(500).json({
                 error : "internal server error"
             })
@@ -23,6 +30,7 @@ export async function addDriveway(req:Request, res:Response){
 }
 
 export async function getDrivewayById(req:Request, res:Response){
+    
       const drivewayId = req.params.drivewayId
         if(!drivewayId){
            return res.status(400).json({Message : "missing driveway Id."})

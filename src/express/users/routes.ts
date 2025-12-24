@@ -12,7 +12,7 @@ usersRouter.get("/:userId",getUserById)
 
 usersRouter.get("/",getAllUsers)
 
-usersRouter.post('/Login',Login)
+usersRouter.post('/login',Login)
 
 
 

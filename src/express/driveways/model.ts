@@ -1,5 +1,16 @@
 import mongoose, { Schema } from 'mongoose'
-import { IDriveway } from './interfce';
+import { IDriveway,IGame} from './interfce';
+
+
+
+
+const GameSchema = new Schema<IGame>({
+    visiting_team: {type: String, required: true},
+    date : {type: String, required: true},
+    booked: {type: Boolean, required: true}
+})
+
+
 
 
 const drivewaySchema = new mongoose.Schema<IDriveway>({
@@ -16,10 +27,6 @@ const drivewaySchema = new mongoose.Schema<IDriveway>({
         type: String,
         required: true
     },
-     stadium: {
-        type: String,
-        required: true
-    },
     price: {
         type: Number,
         required: true
@@ -29,7 +36,12 @@ const drivewaySchema = new mongoose.Schema<IDriveway>({
     },
     description: {
         type: String
+    },
+    games:{
+      type: [GameSchema],
+      default: []
     }
+  
 
    
 })
