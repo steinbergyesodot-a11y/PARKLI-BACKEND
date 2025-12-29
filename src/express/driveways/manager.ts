@@ -27,5 +27,30 @@ export class DrivewayManager{
         const driveways = await drivewayModel.find()
         return driveways
     }
+
+    static async updateDrivewayById(
+  drivewayId: string,
+  gameDate: string
+) {
+    const driveway = await drivewayModel.findById(drivewayId);
+console.log(driveway?.games.map(g => `"${g.date}"`));
+console.log("incoming:", `"${gameDate}"`);
+
+  return await drivewayModel.findOneAndUpdate(
+    { _id: drivewayId },
+    {
+      $set: {
+        "games.$[game].booked": true
+      }
+    },
+    {
+      arrayFilters: [{ "game.date": gameDate }],
+      new: true
+    }
+  );
+}
+
+
+
     
 }

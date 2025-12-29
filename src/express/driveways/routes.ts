@@ -1,7 +1,7 @@
 import express from 'express'
 import multer from 'multer';
-// import { authenticateToken } from '../../../middleware/authenticateToken';
 import {Router} from 'express'
+import { authenticateToken } from '../../utils/middleware/authenticateToken';
 import { addDriveway, deleteDriveway, getAllDriveways, getDrivewayById, updateDrivewayById } from './controller';
 
 // const storage = multer.memoryStorage();
@@ -12,13 +12,13 @@ const drivewayRouter = express.Router();
 
 
 
-drivewayRouter.post('/',addDriveway)
+drivewayRouter.post('/',authenticateToken,addDriveway)
 
 drivewayRouter.get('/:drivewayId',getDrivewayById)
 
 drivewayRouter.get('/',getAllDriveways)
 
-drivewayRouter.put('/:drivewayId',updateDrivewayById)
+drivewayRouter.put('/:drivewayId/:gameDate',updateDrivewayById)
 
 drivewayRouter.delete('/:deleteDrivewayById',deleteDriveway)
 

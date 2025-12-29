@@ -101,10 +101,13 @@ export async function Login(req:Request,res:Response,next:NextFunction){
                  message: "Email or password invalid!"
             });
         }
+
+        
         
         const payload = {
             name: userFound.user?.firstName,
-            _id : userFound.user._id
+            _id : userFound.user._id,
+            role : "guest"
         };
 
 
@@ -131,3 +134,5 @@ export async function Login(req:Request,res:Response,next:NextFunction){
        next(error)
     }
 }
+
+

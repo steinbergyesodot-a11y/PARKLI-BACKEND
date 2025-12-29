@@ -9,6 +9,7 @@ import { IBooking } from './interface';
 
 
 const BookingSchema = new mongoose.Schema<IBooking>({
+   
     drivewayId: {
          type: Schema.Types.ObjectId, 
          ref: 'Driveway',

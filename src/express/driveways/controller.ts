@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { DrivewayManager } from "./manager";
 import { Request, Response } from "express";
 import { drivewayModel } from "./model";
+import { authenticateToken } from "../../utils/middleware/authenticateToken";
 
 
 export async function addDriveway(req:Request, res:Response){
@@ -75,8 +76,28 @@ export async function getAllDriveways(req:Request,res:Response){
 
 
 
-export function updateDrivewayById(req:Request, res:Response){
+export async function updateDrivewayById(req:Request, res:Response){
     
+    const gameDate = req.params.gameDate.trim()
+    const drivewayId = req.params.drivewayId
+
+       if(!drivewayId || !gameDate){
+            return res.status(400).json({message : 'You`re missing parameters'})
+        }
+       if(!mongoose.Types.ObjectId.isValid(drivewayId)){
+            return res.status(400).json({message : "invalid id"})
+       }
+       try{
+           const updatedDriveway = await DrivewayManager.updateDrivewayById(drivewayId,gameDate)
+           return res.status(201).json({
+             updatedDriveway : updatedDriveway
+           })
+
+       }catch(error){
+        res.status(500).json({
+            error : error
+        })
+       }
 }
 
 
