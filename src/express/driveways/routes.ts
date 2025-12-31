@@ -3,16 +3,19 @@ import multer from 'multer';
 import {Router} from 'express'
 import { authenticateToken } from '../../utils/middleware/authenticateToken';
 import { addDriveway, deleteDriveway, getAllDriveways, getDrivewayById, updateDrivewayById } from './controller';
-
-// const storage = multer.memoryStorage();
-// const upload = multer({ storage: storage });
+import { upload } from '../../utils/middleware/multerUpload';
 
 const drivewayRouter = express.Router();
 
 
 
 
-drivewayRouter.post('/',authenticateToken,addDriveway)
+drivewayRouter.post(
+    '/',
+    authenticateToken,
+    upload.array('images', 10),
+    addDriveway
+)
 
 drivewayRouter.get('/:drivewayId',getDrivewayById)
 

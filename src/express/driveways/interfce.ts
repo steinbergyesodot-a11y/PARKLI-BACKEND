@@ -17,7 +17,7 @@ export interface IDriveway {
     address: string;
     walk: string;
     price: number;
-    image: string;
+    images: string[];
     description: string;
-    games: IGame[];
+    games?: IGame[];
 }

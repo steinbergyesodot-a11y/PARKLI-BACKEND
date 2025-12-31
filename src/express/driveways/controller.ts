@@ -3,32 +3,59 @@ import { DrivewayManager } from "./manager";
 import { Request, Response } from "express";
 import { drivewayModel } from "./model";
 import { authenticateToken } from "../../utils/middleware/authenticateToken";
+import cloudinary from "../../utils/config.cloudinary";
+import { IDriveway,IGame } from "./interfce";
 
 
-export async function addDriveway(req:Request, res:Response){
-    
-    
-    const {ownerId,address,walk,price,image,description} = req.body
-    if(!ownerId || !address || !walk || !price || !image || !description){
-        return res.status(400).json({message : 'You`re missing parameters'})
+export async function addDriveway(req: Request, res: Response) {
+  try {
+    const files = req.files as Express.Multer.File[];
+    const imageUrls: string[] = [];
+
+    console.log("FILES:", files);
+
+    for (const file of files) {
+      const result = await cloudinary.uploader.upload(file.path);
+      imageUrls.push(result.secure_url);
     }
-   
-    if(!mongoose.Types.ObjectId.isValid(ownerId)){
-        return res.status(400).json({message : "invalid owner id"})
+
+    const { ownerId, address, walk, price, description } = req.body;
+
+    if (!ownerId || !address || !walk || !price || !description) {
+      return res.status(400).json({ message: "You're missing parameters" });
     }
-    try{
-        const newDriveway = await DrivewayManager.createDriveway(req.body)
-        return res.status(201).json({
-            message : "Created new driveway",
-            newDriveway
-        })
-        }catch(error){
-            console.error("error",error)
-            return res.status(500).json({
-                error : "internal server error"
-            })
-        }
+
+    if (!mongoose.Types.ObjectId.isValid(ownerId)) {
+      return res.status(400).json({ message: "invalid owner id" });
+    }
+
+    const drivewayData: IDriveway = {
+      ownerId,
+      address,
+      walk,
+      price,
+      description,
+      images: imageUrls
+    };
+
+    console.log("DRIVEWAY DATA:", drivewayData);
+
+    const newDriveway = await DrivewayManager.createDriveway(drivewayData);
+
+    return res.status(201).json({
+      message: "Created new driveway",
+      newDriveway
+    });
+
+  } catch (error: any) {
+    console.error("REAL BACKEND ERROR:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message || error
+    });
+  }
 }
+
 
 export async function getDrivewayById(req:Request, res:Response){
     

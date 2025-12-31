@@ -7,7 +7,7 @@ import { IDriveway,IGame} from './interfce';
 const GameSchema = new Schema<IGame>({
     visiting_team: {type: String, required: true},
     date : {type: String, required: true},
-    booked: {type: Boolean, required: true}
+    booked: {type: Boolean, required: false}
 })
 
 
@@ -31,8 +31,8 @@ const drivewaySchema = new mongoose.Schema<IDriveway>({
         type: Number,
         required: true
     },
-    image: {
-        type: String
+    images: {
+        type: [String]
     },
     description: {
         type: String
@@ -40,6 +40,7 @@ const drivewaySchema = new mongoose.Schema<IDriveway>({
     games:{
       type: [GameSchema],
       default: []
+     
     }
   
 
