@@ -28,29 +28,21 @@ export class DrivewayManager{
         return driveways
     }
 
-    static async updateDrivewayById(
-  drivewayId: string,
-  gameDate: string
-) {
-    const driveway = await drivewayModel.findById(drivewayId);
-console.log(driveway?.games.map(g => `"${g.date}"`));
-console.log("incoming:", `"${gameDate}"`);
+    static async updateDrivewayById(drivewayId: string, gameDate: string){
 
-  return await drivewayModel.findOneAndUpdate(
-    { _id: drivewayId },
-    {
-      $set: {
-        "games.$[game].booked": true
-      }
-    },
-    {
-      arrayFilters: [{ "game.date": gameDate }],
-      new: true
+        const driveway = await drivewayModel.findById(drivewayId);
+
+        return await drivewayModel.findOneAndUpdate(
+          { _id: drivewayId },
+          {
+            $set: {
+              "games.$[game].booked": true
+            }
+          },
+          {
+            arrayFilters: [{ "game.date": gameDate }],
+            new: true
+          }
+        );
     }
-  );
-}
-
-
-
-    
 }

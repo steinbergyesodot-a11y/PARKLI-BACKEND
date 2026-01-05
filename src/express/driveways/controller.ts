@@ -12,7 +12,6 @@ export async function addDriveway(req: Request, res: Response) {
     const files = req.files as Express.Multer.File[];
     const imageUrls: string[] = [];
 
-    console.log("FILES:", files);
 
     for (const file of files) {
       const result = await cloudinary.uploader.upload(file.path);
@@ -38,7 +37,6 @@ export async function addDriveway(req: Request, res: Response) {
       images: imageUrls
     };
 
-    console.log("DRIVEWAY DATA:", drivewayData);
 
     const newDriveway = await DrivewayManager.createDriveway(drivewayData);
 

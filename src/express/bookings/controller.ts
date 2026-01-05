@@ -8,9 +8,9 @@ import { BookingModel } from "./model";
 
 export async function addBooking(req:Request, res:Response){
     
-    const {ownerId,drivewayId,renterId,address,price,gameDate,visiting_team} = req.body
+    const {ownerId,drivewayId,renterId,address,price,gameDate,parkingTime,visiting_team} = req.body
     
-        if(!ownerId || !drivewayId || !renterId || !address || !price || !gameDate || !visiting_team){
+        if(!ownerId || !drivewayId || !renterId || !address || !price || !gameDate ||!parkingTime || !visiting_team){
             return res.status(400).json({message : 'You`re missing parameters'})
         }
         const ids = [ownerId, drivewayId, renterId];
@@ -23,8 +23,6 @@ export async function addBooking(req:Request, res:Response){
        
         try{
             const newBooking = await BookingManager.createBooking(req.body)
-            // const populatedBooking = await BookingModel.findById(newBooking._id)
-            // .populate("ownerId") .populate("renterId") .populate("drivewayId");
                 return res.status(201).json({
                     message : "Created new booking",
                     booking : newBooking

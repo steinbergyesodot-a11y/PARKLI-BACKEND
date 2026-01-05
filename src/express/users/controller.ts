@@ -93,7 +93,7 @@ export async function Login(req:Request,res:Response,next:NextFunction){
         const userFound = await UsersManager.Login(email,password)
         if(userFound.success === false){
             return res.status(400).json({
-                Message : "Email or password invalid!"
+                message : "Email or password invalid!"
             })
         }
         if (!userFound.success || !userFound.user){ 

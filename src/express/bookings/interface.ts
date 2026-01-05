@@ -7,6 +7,7 @@ export interface IBooking{
     address: string;
     price: number;
     gameDate: string;
+    parkingTime: string;
     visiting_team: string;
     bookedAt?: Date;
 }
