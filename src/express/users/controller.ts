@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken';
 
 
 export async function addUser(req:Request,res:Response){
-    const {firstName,lastName,email,password} = req.body?? {}
+    const {firstName,lastName,email,password,userType} = req.body?? {}
     if(!firstName || !lastName || !email || !password){
         return res.status(400).json({Message : 'You`re missing parameters'})
     }
@@ -18,7 +18,8 @@ export async function addUser(req:Request,res:Response){
             firstName,
             lastName,
             email,
-            password : hashedPassword
+            password : hashedPassword,
+            userType
         })
         return res.status(201).json({
             Message: "Created user successfully!"

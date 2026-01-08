@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema<IUser>({
         type: String,
         required: true,
         min: 5
+    },
+    userType: {
+        type: String,
+        required: true
     }
   
    
