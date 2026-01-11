@@ -23,26 +23,50 @@ export class DrivewayManager{
         return await drivewayModel.findById(drivewayId)
     }
 
+
     static async getAllDriveways(){
         const driveways = await drivewayModel.find()
         return driveways
     }
 
-    static async updateDrivewayById(drivewayId: string, gameDate: string){
+   static async getGamesByOwnerId(ownerId:string) {
+  const driveway = await drivewayModel.findOne({ ownerId });
+  return driveway?.games || [];
+}
 
-        const driveway = await drivewayModel.findById(drivewayId);
 
+  static async updateDrivewayById(drivewayId: string, gameDate: string) {
+   const normalized = gameDate.trim();
+
+  return await drivewayModel.findOneAndUpdate(
+    { _id: drivewayId },
+    {
+      $set: {
+        "games.$[game].booked": true
+      }
+    },
+    {
+      arrayFilters: [{ "game.date": normalized }],
+      new: true
+    }
+  );
+}
+      static async unblockDrivewayById(drivewayId: string, gameDate: string) {
+const normalized = gameDate.trim();
         return await drivewayModel.findOneAndUpdate(
           { _id: drivewayId },
           {
             $set: {
-              "games.$[game].booked": true
+              "games.$[game].booked": false
             }
           },
           {
-            arrayFilters: [{ "game.date": gameDate }],
+            arrayFilters: [{ "game.date": normalized }],
             new: true
           }
         );
-    }
+      }
+
+   
+
 }

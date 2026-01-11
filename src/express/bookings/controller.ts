@@ -36,7 +36,37 @@ export async function addBooking(req:Request, res:Response){
 }
 
 
-export async function getBookingById(req:Request, res:Response){
+
+
+export async function getBookingByRenterId(req:Request, res:Response){
+    
+    const renterId = req.params.renterId
+        if(!renterId){
+            return res.status(400).json({Message : "missing user Id."})
+        }
+        if(!mongoose.Types.ObjectId.isValid(renterId)) {
+            res.status(400).json({ error: "Invalid playerId format" });
+            return
+        }
+    try{
+        const booking = await BookingManager.getBookingsByRenterId(renterId)
+        if(booking.length > 0){
+            res.status(200).json({
+                message: "found bookings",
+                "bookings" : booking
+            })
+        }
+        else{
+            res.status(200).json({
+                message: "could'nt find bookings for this user"
+            })
+        }
+    }catch(error){
+        res.status(500).json({
+            "error" : error
+        })
+    }
+    
 
 }
 

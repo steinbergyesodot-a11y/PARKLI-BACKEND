@@ -84,6 +84,8 @@ export async function updateUserById(req:Request,res:Response){
 }
 
 
+
+
 export async function Login(req:Request,res:Response,next:NextFunction){
     const {email,password} = req.body
 
@@ -108,7 +110,10 @@ export async function Login(req:Request,res:Response,next:NextFunction){
         const payload = {
             name: userFound.user?.firstName,
             _id : userFound.user._id,
-            role : "guest"
+            role : "guest",
+            userType: userFound.user.userType,
+            email: userFound.user?.email,
+            drivewayIds : userFound.user.drivewayIds
         };
 
 

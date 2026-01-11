@@ -23,6 +23,9 @@ const userSchema = new mongoose.Schema<IUser>({
     userType: {
         type: String,
         required: true
+    },
+    drivewayIds: {
+        type: [String],
     }
   
    

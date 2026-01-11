@@ -5,6 +5,7 @@ import { drivewayModel } from "./model";
 import { authenticateToken } from "../../utils/middleware/authenticateToken";
 import cloudinary from "../../utils/config.cloudinary";
 import { IDriveway,IGame } from "./interfce";
+import { userModel } from "../users/model";
 
 
 export async function addDriveway(req: Request, res: Response) {
@@ -39,6 +40,7 @@ export async function addDriveway(req: Request, res: Response) {
 
 
     const newDriveway = await DrivewayManager.createDriveway(drivewayData);
+    await userModel.findByIdAndUpdate( newDriveway.ownerId, { $push: { drivewayIds: newDriveway._id } } );
 
     return res.status(201).json({
       message: "Created new driveway",
@@ -101,6 +103,29 @@ export async function getAllDriveways(req:Request,res:Response){
 
 
 
+
+export async function getGamesByOwnerId(req:Request, res:Response){
+   const ownerId = req.params.ownerId
+        if(!ownerId){
+           return res.status(400).json({Message : "missing driveway Id."})
+        }
+        if(!mongoose.Types.ObjectId.isValid(ownerId)) {
+            res.status(400).json({ error: "Invalid drivewayId format" });
+            return
+        }
+        try{
+          const games = await DrivewayManager.getGamesByOwnerId(ownerId);
+          res.status(200).json({
+            message: "found games",
+            games
+          })
+        }catch(error){
+          res.status(500).json({
+            "error" : error
+          })
+        }
+}
+
 export async function updateDrivewayById(req:Request, res:Response){
     
     const gameDate = req.params.gameDate.trim()
@@ -124,6 +149,28 @@ export async function updateDrivewayById(req:Request, res:Response){
         })
        }
 }
+
+
+export async function unblockDrivewayById(req: Request, res: Response) {
+  const gameDate = req.params.gameDate.trim();
+  const drivewayId = req.params.drivewayId;
+
+  if (!drivewayId || !gameDate) {
+    return res.status(400).json({ message: "Missing parameters" });
+  }
+
+  try {
+    const updatedDriveway = await DrivewayManager.unblockDrivewayById(
+      drivewayId,
+      gameDate
+    );
+
+    return res.status(200).json({ updatedDriveway });
+  } catch (error) {
+    res.status(500).json({ error });
+  }
+}
+
 
 
 
