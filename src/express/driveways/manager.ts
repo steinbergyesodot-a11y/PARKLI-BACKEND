@@ -37,22 +37,20 @@ export class DrivewayManager{
 
   static async updateDrivewayById(drivewayId: string, gameDate: string) {
    const normalized = gameDate.trim();
-
-  return await drivewayModel.findOneAndUpdate(
-    { _id: drivewayId },
-    {
-      $set: {
-        "games.$[game].booked": true
-      }
-    },
-    {
-      arrayFilters: [{ "game.date": normalized }],
-      new: true
+   
+   const driveway = await drivewayModel.findById(drivewayId);
+   if (!driveway) return null;
+    if(driveway.games){
+      const game = driveway.games.find(g => g.date === normalized);
+      if (!game) return null;
+      game.booked = true;
+      await driveway.save();
+      return driveway;
     }
-  );
-}
+   
+  }
       static async unblockDrivewayById(drivewayId: string, gameDate: string) {
-const normalized = gameDate.trim();
+         const normalized = gameDate.trim();
         return await drivewayModel.findOneAndUpdate(
           { _id: drivewayId },
           {
@@ -66,6 +64,30 @@ const normalized = gameDate.trim();
           }
         );
       }
+
+     static async updateDrivewayCancelBooking(drivewayId: string, gameDate: string) {
+         const driveway = await drivewayModel.findById(drivewayId);
+          if (!driveway) {
+            throw new Error("Driveway not found");
+          }
+          console.log("Driveway ID:", drivewayId); console.log("Incoming gameDate:", gameDate); console.log("Driveway.games:", driveway.games);
+
+          if (!driveway.games || driveway.games.length === 0) {
+            throw new Error("No games found for this driveway");
+          }
+
+          const game = driveway.games.find(g => g.date === gameDate);
+          if (!game) {
+            throw new Error("Game not found for this driveway");
+          }
+
+          game.booked = false;
+
+          await driveway.save();
+
+          return driveway;
+   }
+
 
    
 

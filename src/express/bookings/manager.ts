@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { IBooking } from "./interface";
 import { BookingModel } from "./model";
+import { deleteBookingById } from "./controller";
 
 export class BookingManager{
     static async createBooking(booking : IBooking){
@@ -21,6 +22,12 @@ export class BookingManager{
             console.error("Error fetching bookings:", error); 
             throw error;
         }
+       }
+
+
+       static async deleteBookingById(bookingId: string){
+           const deletedBooking = await BookingModel.findByIdAndDelete(bookingId);
+           return deletedBooking
        }
 
     // static async getAllDriveways(){

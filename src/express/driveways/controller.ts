@@ -6,6 +6,7 @@ import { authenticateToken } from "../../utils/middleware/authenticateToken";
 import cloudinary from "../../utils/config.cloudinary";
 import { IDriveway,IGame } from "./interfce";
 import { userModel } from "../users/model";
+import drivewayRouter from "./routes";
 
 
 export async function addDriveway(req: Request, res: Response) {
@@ -169,6 +170,25 @@ export async function unblockDrivewayById(req: Request, res: Response) {
   } catch (error) {
     res.status(500).json({ error });
   }
+}
+
+export async function updateDrivewayCancleBooking(req: Request, res: Response){
+    const gameDate = req.params.gameDate.trim()
+    const drivewayId = req.params.drivewayId
+
+       if(!drivewayId || !gameDate){
+            return res.status(400).json({message : 'You`re missing parameters'})
+        }
+       if(!mongoose.Types.ObjectId.isValid(drivewayId)){
+            return res.status(400).json({message : "invalid id"})
+       }
+       try{
+        const updatedDriveway = await DrivewayManager.updateDrivewayCancelBooking(drivewayId,gameDate)
+        return res.json({ message: "cancled booking", driveway: updatedDriveway });
+       }catch(error:any){
+          console.error("Error updating game availability:", error.message);
+           return res.status(400).json({ message: error.message });
+       }
 }
 
 

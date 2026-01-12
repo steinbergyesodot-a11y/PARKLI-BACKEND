@@ -51,7 +51,7 @@ export async function getBookingByRenterId(req:Request, res:Response){
     try{
         const booking = await BookingManager.getBookingsByRenterId(renterId)
         if(booking.length > 0){
-            res.status(200).json({
+            return res.status(200).json({
                 message: "found bookings",
                 "bookings" : booking
             })
@@ -82,5 +82,24 @@ export async function updateBookingById(req:Request, res:Response){
 }
 
 export async function deleteBookingById(req:Request, res:Response){
+        const bookingId = req.params.bookingId
+        if(!bookingId){
+            return res.status(400).json({Message : "missing booking Id."})
+        }
+       
+        if(!mongoose.Types.ObjectId.isValid(bookingId)) {
+            res.status(400).json({ error: "Invalid playerId format" });
+            return
+        }
+        try{
+            const deletedBooking = await BookingManager.deleteBookingById(bookingId)
+            if(!deletedBooking){
+                return res.status(404).json({ message: "Booking not found" });
+            }
+            return res.json({ message: "Booking deleted successfully" });
+        }catch(error){
+            console.error("Error deleting booking:", error); 
+            return res.status(500).json({ message: "Server error" });
+        }
 
 }   

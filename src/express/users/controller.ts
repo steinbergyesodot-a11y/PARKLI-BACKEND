@@ -141,4 +141,8 @@ export async function Login(req:Request,res:Response,next:NextFunction){
     }
 }
 
+export async function googleLogin(req:Request,res:Response,next:NextFunction){
+    
+}
+
 

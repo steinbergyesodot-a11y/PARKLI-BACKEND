@@ -17,7 +17,9 @@ bookingRouter.get('/',getAllBookings)
 
 bookingRouter.put('/:bookingId',updateBookingById)
 
-bookingRouter.delete('/:deleteBookingById',deleteBookingById)
+bookingRouter.delete('/:bookingId',deleteBookingById)
+
+
 
 
 
