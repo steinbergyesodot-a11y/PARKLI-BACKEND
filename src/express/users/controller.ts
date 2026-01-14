@@ -7,8 +7,8 @@ import jwt from 'jsonwebtoken';
 
 
 export async function addUser(req:Request,res:Response){
-    const {firstName,lastName,email,password,userType} = req.body?? {}
-    if(!firstName || !lastName || !email || !password){
+    const {firstName,lastName,email,password,roles} = req.body?? {}
+    if(!firstName || !lastName || !email || !password || !roles){
         return res.status(400).json({Message : 'You`re missing parameters'})
     }
 
@@ -19,7 +19,7 @@ export async function addUser(req:Request,res:Response){
             lastName,
             email,
             password : hashedPassword,
-            userType
+            roles
         })
         return res.status(201).json({
             Message: "Created user successfully!"
@@ -110,8 +110,7 @@ export async function Login(req:Request,res:Response,next:NextFunction){
         const payload = {
             name: userFound.user?.firstName,
             _id : userFound.user._id,
-            role : "guest",
-            userType: userFound.user.userType,
+            roles : userFound.user.roles,
             email: userFound.user?.email,
             drivewayIds : userFound.user.drivewayIds
         };
@@ -131,7 +130,7 @@ export async function Login(req:Request,res:Response,next:NextFunction){
 
 
         return res.status(200).json({
-             message: 'Login successful', token 
+             message: 'Login successful', token ,payload
         });
         
 

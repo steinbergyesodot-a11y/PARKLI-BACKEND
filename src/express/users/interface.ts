@@ -3,6 +3,6 @@ export interface IUser{
     lastName:string;
     email:string;
     password: string;
-    userType: "Renter" | "Host";
+    roles: ("renter" | "host")[];
     drivewayIds?: string[]
 }

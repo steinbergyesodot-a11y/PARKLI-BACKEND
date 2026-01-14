@@ -20,10 +20,12 @@ const userSchema = new mongoose.Schema<IUser>({
         required: true,
         min: 5
     },
-    userType: {
-        type: String,
-        required: true
+    roles:{
+        type:[String],
+        enum: ["renter", "host"],
+        default: ["renter"]
     },
+    
     drivewayIds: {
         type: [String],
     }

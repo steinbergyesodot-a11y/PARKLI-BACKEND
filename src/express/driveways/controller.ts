@@ -41,7 +41,13 @@ export async function addDriveway(req: Request, res: Response) {
 
 
     const newDriveway = await DrivewayManager.createDriveway(drivewayData);
-    await userModel.findByIdAndUpdate( newDriveway.ownerId, { $push: { drivewayIds: newDriveway._id } } );
+    await userModel.findByIdAndUpdate(
+      newDriveway.ownerId,
+      {
+        $push: { drivewayIds: newDriveway._id },
+        $addToSet: { roles: "host" }
+      }
+    );
 
     return res.status(201).json({
       message: "Created new driveway",
