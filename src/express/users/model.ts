@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema<IUser>({
     },
     lastName: {
         type: String,
-        required: true
+        required: false
     },
      email: {
         type: String,
@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema<IUser>({
     },
      password: {
         type: String,
-        required: true,
+        required: false,
         min: 5
     },
     roles:{
@@ -28,7 +28,9 @@ const userSchema = new mongoose.Schema<IUser>({
     
     drivewayIds: {
         type: [String],
-    }
+    },
+    googleId: String,
+    authProvider: { type: String, default: "local" }
   
    
 })

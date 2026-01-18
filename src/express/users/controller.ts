@@ -3,6 +3,10 @@ import { UsersManager } from './manager';
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from "google-auth-library";
+import { userModel } from './model';
+
+
 
 
 
@@ -140,8 +144,65 @@ export async function Login(req:Request,res:Response,next:NextFunction){
     }
 }
 
-export async function googleLogin(req:Request,res:Response,next:NextFunction){
-    
-}
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+export async function googleLogin(req:Request,res:Response,next:NextFunction) {
+  try {
+    const { accessToken } = req.body;
 
+    if (!accessToken) {
+      return res.status(400).json({ message: "Missing Google access token" });
+    }
+
+    // 1. Verify Google token
+    const ticket = await client.getTokenInfo(accessToken);
+
+    const email = ticket.email;
+    const googleId = ticket.sub;
+
+    // 2. Check if user exists in your DB
+    let user = await userModel.findOne({ email });
+    const firstName = email?.split("@")[0] ?? "unknown";
+    
+    // 3. If not, create a new user automatically
+    if (!user) {
+      user = await userModel.create({
+        firstName,
+        email,
+        googleId,
+        roles: ["renter"], // or whatever default roles you use
+        drivewayIds: [],
+        authProvider: "google"
+      });
+    }
+
+    // 4. Build the SAME payload as your normal login
+    const payload = {
+      name: user.firstName,
+      _id: user._id,
+      roles: user.roles,
+      email: user.email,
+      drivewayIds: user.drivewayIds
+    };
+
+    if (!process.env.JWT_SECRET_KEY) {
+      throw new Error("JWT_SECRET_KEY is not defined");
+    }
+
+    // 5. Create the SAME JWT as your normal login
+    const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
+      expiresIn: "1h"
+    });
+
+    // 6. Send it back
+    return res.status(200).json({
+      message: "Google login successful",
+      token,
+      payload
+    });
+
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+}
 
