@@ -65,6 +65,22 @@ export class DrivewayManager{
         );
       }
 
+      static async blockGame(drivewayId: string, gameDate: string){
+            const normalized = gameDate.trim();
+        return await drivewayModel.findOneAndUpdate(
+          { _id: drivewayId },
+          {
+            $set: {
+              "games.$[game].blocked": true
+            }
+          },
+          {
+            arrayFilters: [{ "game.date": normalized }],
+            new: true
+          }
+        );
+      }
+
      static async updateDrivewayCancelBooking(drivewayId: string, gameDate: string) {
          const driveway = await drivewayModel.findById(drivewayId);
           if (!driveway) {

@@ -2,7 +2,7 @@ import express from 'express'
 import multer from 'multer';
 import {Router} from 'express'
 import { authenticateToken } from '../../utils/middleware/authenticateToken';
-import { addDriveway, deleteDriveway, getAllDriveways, getDrivewayById, updateDrivewayById,getGamesByOwnerId, unblockDrivewayById, updateDrivewayCancleBooking } from './controller';
+import { addDriveway, deleteDriveway, getAllDriveways, getDrivewayById, updateDrivewayById,getGamesByOwnerId, unblockDrivewayById, updateDrivewayCancleBooking,blockGame } from './controller';
 import { upload } from '../../utils/middleware/multerUpload';
 
 const drivewayRouter = express.Router();
@@ -24,6 +24,8 @@ drivewayRouter.get('/getGames/:ownerId',getGamesByOwnerId)
 drivewayRouter.get('/',getAllDriveways)
 
 drivewayRouter.put('/:drivewayId/:gameDate',updateDrivewayById)
+
+drivewayRouter.put('/:drivewayId/block/:gameDate',blockGame)
 
 drivewayRouter.put('/unblock/:drivewayId/:gameDate', unblockDrivewayById);
 

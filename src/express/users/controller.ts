@@ -83,8 +83,94 @@ export async function deleteUserById(req:Request,res:Response){
 }
 
 
-export async function updateUserById(req:Request,res:Response){
-     
+export async function updateFirstName(req:Request,res:Response){
+    const userId = req.params.userId
+    const firstName = req.params.firstName
+    if(!userId){
+        return res.status(400).json({Message : "missing user Id."})
+    }
+    if(!mongoose.Types.ObjectId.isValid(userId)) {
+        res.status(400).json({ error: "Invalid playerId format" });
+        return
+    }
+     if(!firstName){
+        return res.status(400).json({Message : "missing new name."})
+    }
+    try{
+        const updatedUser = await userModel.findByIdAndUpdate(
+            userId,
+            {firstName: firstName},
+            {new:true}
+        )
+        res.status(201).json({
+            message: "updated Name",
+            updatedUser
+        })
+    }catch(error){
+        res.status(500).json({
+            "error":error
+        })
+    }
+}
+
+export async function updateLastName(req:Request,res:Response){
+    const userId = req.params.userId
+    const lastName = req.params.lastName
+    if(!userId){
+        return res.status(400).json({Message : "missing user Id."})
+    }
+    if(!mongoose.Types.ObjectId.isValid(userId)) {
+        res.status(400).json({ error: "Invalid playerId format" });
+        return
+    }
+     if(!lastName){
+        return res.status(400).json({Message : "missing new name."})
+    }
+    try{
+        const updatedUser = await userModel.findByIdAndUpdate(
+            userId,
+            {lastName: lastName},
+            {new:true}
+        )
+        res.status(201).json({
+            message: "updated Name",
+            updatedUser
+        })
+    }catch(error){
+        res.status(500).json({
+            "error":error
+        })
+    }
+}
+
+export async function updateEmail(req:Request,res:Response){
+    const userId = req.params.userId
+    const email = req.params.email
+    if(!userId){
+        return res.status(400).json({Message : "missing user Id."})
+    }
+    if(!mongoose.Types.ObjectId.isValid(userId)) {
+        res.status(400).json({ error: "Invalid userId format" });
+        return
+    }
+     if(!email){
+        return res.status(400).json({Message : "missing new email address."})
+    }
+    try{
+        const updatedUser = await userModel.findByIdAndUpdate(
+            userId,
+            {email: email},
+            {new:true}
+        )
+        res.status(201).json({
+            message: "updated email address",
+            updatedUser
+        })
+    }catch(error){
+        res.status(500).json({
+            "error":error
+        })
+    }
 }
 
 
@@ -112,7 +198,8 @@ export async function Login(req:Request,res:Response,next:NextFunction){
         
         
         const payload = {
-            name: userFound.user?.firstName,
+            firstName: userFound.user?.firstName,
+            lastName: userFound.user?.lastName,
             _id : userFound.user._id,
             roles : userFound.user.roles,
             email: userFound.user?.email,
