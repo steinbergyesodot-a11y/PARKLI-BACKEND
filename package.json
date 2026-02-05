@@ -22,7 +22,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.22.1",
     "multer": "^2.0.2",
-    "stripe": "^20.3.0"
+    "stripe": "^20.3.0",
+    "@types/node": "^20.19.31"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -30,7 +31,6 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
-    "@types/node": "^20.19.31",
     "@types/stripe": "^8.0.416",
     "typescript": "^5.9.3"
   }
