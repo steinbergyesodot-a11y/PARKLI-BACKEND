@@ -1,0 +1,5 @@
+[33mf6aae3e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdev3[m[33m)[m Move @types/node to dependencies for Render build
+[33m3bb7369[m[33m ([m[1;31morigin/dev3[m[33m)[m Pin Node version and fix Node types for Render
+[33ma15d21a[m Fix TS build and dependencies
+[33m2aad500[m Backend compiles successfully, ready for Render
+[33m97cc5cd[m added
