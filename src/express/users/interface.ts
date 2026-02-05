@@ -1,9 +1,11 @@
 export interface IUser {
   firstName: string;
-  lastName?: string;      // now optional
+  lastName?: string;     
   email: string;
-  password?: string;      // now optional
+  password?: string;      
   roles: ("renter" | "host")[];
+  stripeAccountId?: string;
+  isStripeVerified?: boolean;
   drivewayIds?: string[];
   googleId?: string;
   authProvider?: string;

@@ -25,6 +25,11 @@ const drivewaySchema = new mongoose.Schema<IDriveway>({
         type: String,
         required: true
     },
+    name: {
+        type: String,
+        required:true,
+        default: "My Driveway"
+    },
      walk: {
         type: String,
         required: true

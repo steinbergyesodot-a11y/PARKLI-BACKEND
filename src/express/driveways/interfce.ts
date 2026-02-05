@@ -16,6 +16,7 @@ export interface IGame {
 
 export interface IDriveway {
     ownerId: Types.ObjectId;
+    name:string;
     address: string;
     walk: string;
     price: number;

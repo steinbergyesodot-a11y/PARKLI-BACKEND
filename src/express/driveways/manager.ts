@@ -49,13 +49,13 @@ export class DrivewayManager{
     }
    
   }
-      static async unblockDrivewayById(drivewayId: string, gameDate: string) {
-         const normalized = gameDate.trim();
+   static async unblockGame(drivewayId: string, gameDate: string){
+            const normalized = gameDate.trim();
         return await drivewayModel.findOneAndUpdate(
           { _id: drivewayId },
           {
             $set: {
-              "games.$[game].booked": false
+              "games.$[game].blocked": false
             }
           },
           {
@@ -102,6 +102,10 @@ export class DrivewayManager{
           await driveway.save();
 
           return driveway;
+   }
+
+   static async getAlldrivewaysByUserId(userId:string){
+     return await drivewayModel.find({ ownerId: userId }).lean(); 
    }
 
 

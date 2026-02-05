@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from "google-auth-library";
 import { userModel } from './model';
-
+import Stripe from 'stripe';
 
 
 
@@ -203,7 +203,8 @@ export async function Login(req:Request,res:Response,next:NextFunction){
             _id : userFound.user._id,
             roles : userFound.user.roles,
             email: userFound.user?.email,
-            drivewayIds : userFound.user.drivewayIds
+            drivewayIds : userFound.user.drivewayIds,
+            authProvider: userFound.user.authProvider
         };
 
 
@@ -293,3 +294,31 @@ export async function googleLogin(req:Request,res:Response,next:NextFunction) {
   }
 }
 
+export async function completeStripeOnboarding(req: Request, res: Response) {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+  try {
+    const userId = req.query.userId as string;
+    if (!userId) return res.status(400).json({ message: "Missing userId" });
+
+    const user = await userModel.findById(userId);
+    if (!user || !user.stripeAccountId) {
+      return res.status(404).json({ message: "User or Stripe account not found" });
+    }
+
+    // Retrieve Stripe account status
+    const account = await stripe.accounts.retrieve(user.stripeAccountId);
+
+    // Check if onboarding is complete
+    if (account.details_submitted && account.charges_enabled) {
+      user.isStripeVerified = true;
+      await user.save();
+    }
+
+    // Redirect back to your frontend
+    return res.redirect("http://localhost:5174");
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Error completing onboarding" });
+  }
+}

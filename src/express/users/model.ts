@@ -25,7 +25,14 @@ const userSchema = new mongoose.Schema<IUser>({
         enum: ["renter", "host"],
         default: ["renter"]
     },
-    
+    stripeAccountId:{
+        type:String,
+        required:false
+    },
+    isStripeVerified:{
+        type: Boolean,
+        required:false
+    },
     drivewayIds: {
         type: [String],
     },

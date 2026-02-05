@@ -7,6 +7,7 @@ import cloudinary from "../../utils/config.cloudinary";
 import { IDriveway,IGame } from "./interfce";
 import { userModel } from "../users/model";
 import drivewayRouter from "./routes";
+import { stripe } from "../stripe"; // your Stripe instance
 
 
 export async function addDriveway(req: Request, res: Response) {
@@ -14,17 +15,16 @@ export async function addDriveway(req: Request, res: Response) {
     const files = req.files as Express.Multer.File[];
     const imageUrls: string[] = [];
 
-
+    // Upload images
     for (const file of files) {
       const result = await cloudinary.uploader.upload(file.path);
       imageUrls.push(result.secure_url);
     }
 
-    const { ownerId, address, walk, price, description } = req.body;
+    const { ownerId, address, name, walk, price, description } = req.body;
     const rules = JSON.parse(req.body.rules);
 
-
-    if (!ownerId || !address || !walk || !price || !description) {
+    if (!ownerId || !name || !address || !walk || !price || !description) {
       return res.status(400).json({ message: "You're missing parameters" });
     }
 
@@ -35,6 +35,7 @@ export async function addDriveway(req: Request, res: Response) {
     const drivewayData: IDriveway = {
       ownerId,
       address,
+      name,
       walk,
       price,
       rules,
@@ -42,19 +43,48 @@ export async function addDriveway(req: Request, res: Response) {
       images: imageUrls
     };
 
-
+    // 1. Create driveway
     const newDriveway = await DrivewayManager.createDriveway(drivewayData);
-    await userModel.findByIdAndUpdate(
+
+    // 2. Update user role to host
+    const user = await userModel.findByIdAndUpdate(
       newDriveway.ownerId,
       {
         $push: { drivewayIds: newDriveway._id },
         $addToSet: { roles: "host" }
-      }
+      },
+      { new: true }
     );
 
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 3. If user does NOT have a Stripe account, create one
+    if (!user.stripeAccountId) {
+      const account = await stripe.accounts.create({
+        type: "express",
+        email: user.email
+      });
+
+      user.stripeAccountId = account.id;
+      user.isStripeVerified = false
+      await user.save();
+    }
+
+    // 4. Generate onboarding link
+   const onboardingLink = await stripe.accountLinks.create({
+  account: user.stripeAccountId,
+  refresh_url: `http://localhost:4000/api/users/stripe/onboarding/refresh?userId=${user._id}`,
+  return_url: `http://localhost:4000/api/users/stripe/onboarding/complete?userId=${user._id}`,
+  type: "account_onboarding"
+});
+
+    // 5. Return driveway + onboarding URL
     return res.status(201).json({
       message: "Created new driveway",
-      newDriveway
+      newDriveway,
+      onboardingUrl: onboardingLink.url
     });
 
   } catch (error: any) {
@@ -65,6 +95,7 @@ export async function addDriveway(req: Request, res: Response) {
     });
   }
 }
+
 
 
 export async function getDrivewayById(req:Request, res:Response){
@@ -169,7 +200,6 @@ export async function blockGame(req: Request, res: Response){
   try{
     const updatedDriveway = await DrivewayManager.blockGame(drivewayId,gameDate)
     return res.status(201).json({
-      message: "updated driveway",
       updatedDriveway
     })
   }catch(error){
@@ -180,7 +210,7 @@ export async function blockGame(req: Request, res: Response){
 }
 
 
-export async function unblockDrivewayById(req: Request, res: Response) {
+export async function unblockGame(req: Request, res: Response) {
   const gameDate = req.params.gameDate.trim();
   const drivewayId = req.params.drivewayId;
 
@@ -189,12 +219,14 @@ export async function unblockDrivewayById(req: Request, res: Response) {
   }
 
   try {
-    const updatedDriveway = await DrivewayManager.unblockDrivewayById(
+    const updatedDriveway = await DrivewayManager.unblockGame(
       drivewayId,
       gameDate
     );
 
-    return res.status(200).json({ updatedDriveway });
+    return res.status(200).json(
+      { "updatedDriveway" : updatedDriveway }
+    );
   } catch (error) {
     res.status(500).json({ error });
   }
@@ -220,9 +252,28 @@ export async function updateDrivewayCancleBooking(req: Request, res: Response){
 }
 
 
+export async function getAllDrivewaysByUserId(req: Request, res: Response){
+      const userId = req.params.userId
+      if(!userId){
+         return res.status(400).json({Message : "missing driveway Id."})
+      }
+      if(!mongoose.Types.ObjectId.isValid(userId)) {
+          res.status(400).json({ error: "Invalid drivewayId format" });
+          return
+      }
+      try{
+        const driveways = await DrivewayManager.getAlldrivewaysByUserId(userId)
+        return res.status(200).json({
+           driveways
+        })
+      }catch(error){
+        return res.status(500).json({error})
+      }
 
+
+} 
 
 
 export function deleteDriveway(req:Request, res:Response){
-    
 }
+
