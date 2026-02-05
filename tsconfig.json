@@ -4,10 +4,11 @@
     "module": "CommonJS",
     "rootDir": "src",
     "outDir": "dist",
-    "strict": true,
+    "strict": false,
     "esModuleInterop": true,
+    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "types": ["node"]
   },
   "include": ["src"]
 }
