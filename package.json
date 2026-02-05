@@ -2,10 +2,12 @@
   "name": "parkli-backend",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npx tsx src/express/server.ts"
-  },
+ "scripts": {
+  "dev": "npx tsx src/express/server.ts",
+  "build": "tsc",
+  "start": "node dist/express/server.js"
+}
+,
   "author": "",
   "license": "ISC",
   "description": "",
