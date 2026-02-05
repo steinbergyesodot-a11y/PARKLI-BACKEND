@@ -2,12 +2,11 @@
   "name": "parkli-backend",
   "version": "1.0.0",
   "main": "index.js",
- "scripts": {
-  "dev": "npx tsx src/express/server.ts",
-  "build": "tsc",
-  "start": "node dist/express/server.js"
-}
-,
+  "scripts": {
+    "dev": "npx tsx src/express/server.ts",
+    "build": "tsc",
+    "start": "node dist/express/server.js"
+  },
   "author": "",
   "license": "ISC",
   "description": "",
@@ -31,6 +30,8 @@
     "@types/express": "^5.0.5",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
-    "@types/stripe": "^8.0.416"
+    "@types/node": "^25.2.0",
+    "@types/stripe": "^8.0.416",
+    "typescript": "^5.9.3"
   }
 }
