@@ -73,12 +73,13 @@ export async function addDriveway(req: Request, res: Response) {
     }
 
     // 4. Generate onboarding link
-   const onboardingLink = await stripe.accountLinks.create({
+ const onboardingLink = await stripe.accountLinks.create({
   account: user.stripeAccountId,
-  refresh_url: `http://localhost:4000/api/users/stripe/onboarding/refresh?userId=${user._id}`,
-  return_url: `http://localhost:4000/api/users/stripe/onboarding/complete?userId=${user._id}`,
+  refresh_url: `${process.env.BACKEND_URL}/api/users/stripe/onboarding/refresh?userId=${user._id}`,
+  return_url: `${process.env.BACKEND_URL}/api/users/stripe/onboarding/complete?userId=${user._id}`,
   type: "account_onboarding"
 });
+
 
     // 5. Return driveway + onboarding URL
     return res.status(201).json({
