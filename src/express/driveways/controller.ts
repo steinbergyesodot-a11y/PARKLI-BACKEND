@@ -71,6 +71,7 @@ export async function addDriveway(req: Request, res: Response) {
       user.isStripeVerified = false
       await user.save();
     }
+console.log("BACKEND_URL =", process.env.BACKEND_URL);
 
     // 4. Generate onboarding link
  const onboardingLink = await stripe.accountLinks.create({
