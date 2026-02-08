@@ -37,7 +37,7 @@ export async function addUser(req:Request,res:Response){
 
 
 export async function getUserById(req:Request,res:Response){
-    const userId = req.params.userId
+    const userId = req.params.userId as string
     if(!userId){
         return res.status(400).json({Message : "missing user Id."})
     }
@@ -84,7 +84,7 @@ export async function deleteUserById(req:Request,res:Response){
 
 
 export async function updateFirstName(req:Request,res:Response){
-    const userId = req.params.userId
+    const userId = req.params.userId as string
     const firstName = req.params.firstName
     if(!userId){
         return res.status(400).json({Message : "missing user Id."})
@@ -114,7 +114,7 @@ export async function updateFirstName(req:Request,res:Response){
 }
 
 export async function updateLastName(req:Request,res:Response){
-    const userId = req.params.userId
+    const userId = req.params.userId as string
     const lastName = req.params.lastName
     if(!userId){
         return res.status(400).json({Message : "missing user Id."})
@@ -144,7 +144,7 @@ export async function updateLastName(req:Request,res:Response){
 }
 
 export async function updateEmail(req:Request,res:Response){
-    const userId = req.params.userId
+    const userId = req.params.userId as string
     const email = req.params.email
     if(!userId){
         return res.status(400).json({Message : "missing user Id."})
