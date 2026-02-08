@@ -101,7 +101,7 @@ export async function addDriveway(req: Request, res: Response) {
 
 export async function getDrivewayById(req:Request, res:Response){
     
-      const drivewayId = req.params.drivewayId
+      const drivewayId = req.params.drivewayId as string
         if(!drivewayId){
            return res.status(400).json({Message : "missing driveway Id."})
         }
@@ -147,7 +147,7 @@ export async function getAllDriveways(req:Request,res:Response){
 
 
 export async function getGamesByOwnerId(req:Request, res:Response){
-   const ownerId = req.params.ownerId
+   const ownerId = req.params.ownerId as string
         if(!ownerId){
            return res.status(400).json({Message : "missing driveway Id."})
         }
@@ -170,8 +170,8 @@ export async function getGamesByOwnerId(req:Request, res:Response){
 
 export async function updateDrivewayById(req:Request, res:Response){ // Makes game booked = true
     
-    const gameDate = req.params.gameDate.trim()
-    const drivewayId = req.params.drivewayId
+    const gameDate = (req.params.gameDate as string).trim()
+    const drivewayId = req.params.drivewayId as string
 
        if(!drivewayId || !gameDate){
             return res.status(400).json({message : 'You`re missing parameters'})
@@ -193,8 +193,8 @@ export async function updateDrivewayById(req:Request, res:Response){ // Makes ga
 }
 
 export async function blockGame(req: Request, res: Response){
-  const drivewayId = req.params.drivewayId;
-  const gameDate = req.params.gameDate.trim();
+  const drivewayId = req.params.drivewayId as string;
+  const gameDate = (req.params.gameDate as string).trim();
     if (!drivewayId || !gameDate) {
     return res.status(400).json({ message: "Missing parameters" });
   }
@@ -212,8 +212,8 @@ export async function blockGame(req: Request, res: Response){
 
 
 export async function unblockGame(req: Request, res: Response) {
-  const gameDate = req.params.gameDate.trim();
-  const drivewayId = req.params.drivewayId;
+  const gameDate = (req.params.gameDate as string).trim();
+  const drivewayId = req.params.drivewayId as string;
 
   if (!drivewayId || !gameDate) {
     return res.status(400).json({ message: "Missing parameters" });
@@ -234,8 +234,8 @@ export async function unblockGame(req: Request, res: Response) {
 }
 
 export async function updateDrivewayCancleBooking(req: Request, res: Response){
-    const gameDate = req.params.gameDate.trim()
-    const drivewayId = req.params.drivewayId
+    const gameDate = (req.params.gameDate as string).trim()
+    const drivewayId = req.params.drivewayId as string
 
        if(!drivewayId || !gameDate){
             return res.status(400).json({message : 'You`re missing parameters'})
@@ -254,7 +254,7 @@ export async function updateDrivewayCancleBooking(req: Request, res: Response){
 
 
 export async function getAllDrivewaysByUserId(req: Request, res: Response){
-      const userId = req.params.userId
+      const userId = req.params.userId as string
       if(!userId){
          return res.status(400).json({Message : "missing driveway Id."})
       }

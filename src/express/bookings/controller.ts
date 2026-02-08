@@ -125,7 +125,7 @@ console.log("isStripeVerified:", host?.isStripeVerified);
 
 export async function getBookingByRenterId(req:Request, res:Response){
     
-    const renterId = req.params.renterId
+    const renterId = req.params.renterId as string
         if(!renterId){
             return res.status(400).json({Message : "missing user Id."})
         }
@@ -167,7 +167,7 @@ export async function updateBookingById(req:Request, res:Response){
 }
 
 export async function deleteBookingById(req:Request, res:Response){
-        const bookingId = req.params.bookingId
+        const bookingId = req.params.bookingId as string
         if(!bookingId){
             return res.status(400).json({Message : "missing booking Id."})
         }
@@ -193,7 +193,7 @@ export async function deleteBookingById(req:Request, res:Response){
 
 export async function checkIfUserHasBooking(req: Request, res: Response) {
   try {
-    const userId = req.params.userId;
+    const userId = req.params.userId as string;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.json(false); // invalid ID → definitely no booking
