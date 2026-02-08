@@ -339,6 +339,11 @@ export const refreshStripeOnboarding = async (req:Request, res:Response) => {
       return_url: `${process.env.BACKEND_URL}/api/users/stripe/onboarding/complete?userId=${userId}`,
       type: "account_onboarding"
     });
+    console.log("BACKEND_URL:", process.env.BACKEND_URL);
+console.log("REFRESH URL:", `${process.env.BACKEND_URL}/api/users/stripe/onboarding/refresh?userId=${userId}`);
+console.log("RETURN URL:", `${process.env.BACKEND_URL}/api/users/stripe/onboarding/complete?userId=${userId}`);
+
+    
 
     res.redirect(link.url);
   } catch (err) {
