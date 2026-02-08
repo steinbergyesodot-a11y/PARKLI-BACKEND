@@ -315,10 +315,34 @@ export async function completeStripeOnboarding(req: Request, res: Response) {
     }
 
     // Redirect back to your frontend
-    return res.redirect("http://localhost:5174");
+    return res.redirect("https://parkli-front.vercel.app/");
 
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Error completing onboarding" });
   }
 }
+
+
+// controllers/stripeController.js
+
+export const refreshStripeOnboarding = async (req:Request, res:Response) => {
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+
+  try {
+    const userId = req.query.userId;
+    const user = await userModel.findById(userId);
+
+    const link = await stripe.accountLinks.create({
+      account: user.stripeAccountId,
+      refresh_url: `${process.env.BACKEND_URL}/api/users/stripe/onboarding/refresh?userId=${userId}`,
+      return_url: `${process.env.BACKEND_URL}/api/users/stripe/onboarding/complete?userId=${userId}`,
+      type: "account_onboarding"
+    });
+
+    res.redirect(link.url);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error refreshing Stripe onboarding");
+  }
+};
