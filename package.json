@@ -16,6 +16,7 @@
   "dependencies": {
     "@types/express": "^5.0.6",
     "@types/mongoose": "^5.11.96",
+    "@types/node": "^25.2.2",
     "axios": "^1.13.5",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.9.0",
@@ -34,7 +35,6 @@
     "@types/cors": "^2.8.19",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
-    "@types/node": "^25.2.2",
     "@types/stripe": "^8.0.416",
     "typescript": "^5.9.3"
   }
