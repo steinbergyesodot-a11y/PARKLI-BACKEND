@@ -291,6 +291,29 @@ export async function getAllDrivewaysByUserId(req: Request, res: Response){
 } 
 
 
+export async function getAllRulesByDrivewayId(req:Request, res:Response){
+  const drivewayId = req.params.drivewayId as string
+    if(!drivewayId){
+       return res.status(400).json({Message : "missing driveway Id."})
+    }
+    if(!mongoose.Types.ObjectId.isValid(drivewayId)) {
+        res.status(400).json({ error: "Invalid drivewayId format" });
+        return
+    }
+      try{
+        const rules = await DrivewayManager.getAllRulesByDrivewayId(drivewayId)
+        return res.status(200).json({
+           rules
+        })
+      }catch(error){
+        return res.status(500).json({error})
+      }
+
+
+}
+
+
+
 export function deleteDriveway(req:Request, res:Response){
 }
 

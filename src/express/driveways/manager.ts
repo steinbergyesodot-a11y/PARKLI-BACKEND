@@ -108,6 +108,11 @@ export class DrivewayManager{
      return await drivewayModel.find({ ownerId: userId }).lean(); 
    }
 
+   static async getAllRulesByDrivewayId(drivewayId: string) { 
+    const driveway = await drivewayModel.findById(drivewayId); 
+    if (!driveway) return null; 
+    return driveway.rules; 
+  }
 
    
 
