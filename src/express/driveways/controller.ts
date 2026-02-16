@@ -83,7 +83,8 @@ if (!base) {
 const userId = user._id.toString();
 
 const returnUrl =
-  `${base}/api/users/stripe/onboarding/complete?userId=${encodeURIComponent(userId)}`;
+  `${base}/api/users/stripe/onboarding/complete/${encodeURIComponent(userId)}`;
+
 
 const refreshUrl =
   `${base}/api/users/stripe/onboarding/refresh?userId=${encodeURIComponent(userId)}`;
@@ -99,8 +100,6 @@ const onboardingLink = await stripe.accountLinks.create({
 
     // 5. Return driveway + onboarding URL
     return res.status(201).json({
-      message: "Created new driveway",
-      newDriveway,
       onboardingUrl: onboardingLink.url
     });
 

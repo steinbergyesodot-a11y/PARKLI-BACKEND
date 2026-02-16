@@ -6,47 +6,105 @@ import { userModel } from "../users/model";
 import { drivewayModel } from "../driveways/model";
 import stripe1 from "stripe";
 import { stripe } from "../stripe";
+import { compareSync } from "bcrypt";
 
 
-
-
-export async function addBooking(req:Request, res:Response){
-    
-    const {ownerId,drivewayId,renterId,address,price,gameDate,parkingTime,visiting_team} = req.body
-    
-        if(!ownerId || !drivewayId || !renterId || !address || !price || !gameDate ||!parkingTime || !visiting_team){
-            return res.status(400).json({message : 'You`re missing parameters'})
-        }
-        const ids = [ownerId, drivewayId, renterId];
-        const invalidIds = ids.filter(id => !mongoose.Types.ObjectId.isValid(id));
-
-        if (invalidIds.length > 0) {
-             return res.status(400).json({ message: "Invalid ID(s)", invalidIds });
-        }
-
-       
-        try{
-            const newBooking = await BookingManager.createBooking(req.body)
-                return res.status(201).json({
-                    message : "Created new booking",
-                    booking : newBooking
-                })
-                }catch(error){
-                    console.error("error",error)
-                    return res.status(500).json({
-                        error : "internal server error"
-                    })
-                }
+function convertTo24Hour(timeStr: string): string {
+    const date = new Date(`1970-01-01 ${timeStr}`);
+    if (isNaN(date.getTime())) return "";
+    return date.toLocaleTimeString("en-US", {
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit"
+    });
 }
+
+
+export async function addBooking(req: Request, res: Response) {
+    
+    const {
+        ownerId,
+        drivewayId,
+        renterId,
+        address,
+        price,
+        gameDate,
+        parkingBegins,
+        visiting_team
+    } = req.body;
+    console.log(req.body)
+    // 1. Validate required fields
+    if (!ownerId || !drivewayId || !renterId || !address || !price || !gameDate || !parkingBegins || !visiting_team) {
+        return res.status(400).json({ message: "You're missing parameters" });
+    }
+
+    // 2. Validate ObjectIds
+    const ids = [ownerId, drivewayId, renterId];
+    const invalidIds = ids.filter(id => !mongoose.Types.ObjectId.isValid(id));
+    if (invalidIds.length > 0) {
+        return res.status(400).json({ message: "Invalid ID(s)", invalidIds });
+    }
+
+    try {
+        // 3. Normalize time: "7:00" → "07:00"
+        let normalizedTime = parkingBegins;
+        if (parkingBegins.length === 4) {
+            normalizedTime = "0" + parkingBegins;
+        }
+
+        // 4. Build booking start datetime
+        const bookingStart = new Date(`${gameDate}T${normalizedTime}`);
+
+        // 5. Validate date/time format
+        if (isNaN(bookingStart.getTime())) {
+            return res.status(400).json({
+                message: "Invalid date or time format. Expected YYYY-MM-DD and HH:mm."
+            });
+        }
+
+        // 6. Calculate cancelBy (24 hours before)
+        const cancelBy = new Date(bookingStart.getTime() - 24 * 60 * 60 * 1000);
+        const cancelByString = cancelBy.toISOString();
+
+        // 7. Build booking object
+        const bookingData = {
+            ownerId,
+            drivewayId,
+            renterId,
+            address,
+            price,
+            gameDate,
+            parkingTime: normalizedTime,
+            visiting_team,
+            cancelBy: cancelByString,
+            bookedAt: new Date()
+        };
+
+        // 8. Save booking
+        const newBooking = await BookingManager.createBooking(bookingData);
+
+        return res.status(201).json({
+            message: "Created new booking",
+            booking: newBooking
+        });
+
+    } catch (error) {
+        console.error("Booking creation error:", error);
+        return res.status(500).json({
+            error: "internal server error"
+        });
+    }
+}
+
 
 export async function createPaymentIntent(req:Request, res:Response){
 
-
-     const {ownerId,drivewayId,renterId,address,price,gameDate,parkingTime,visiting_team} = req.body
+     const {ownerId,drivewayId,renterId,address,price,gameDate,parkingBegins,visiting_team} = req.body
     
-        if(!ownerId || !drivewayId || !renterId || !address || !price || !gameDate ||!parkingTime || !visiting_team){
+        if(!ownerId || !drivewayId || !renterId || !address || !price || !gameDate ||!parkingBegins || !visiting_team){
             return res.status(400).json({message : 'You`re missing parameters'})
         }
+
         const ids = [ownerId, drivewayId, renterId];
         const invalidIds = ids.filter(id => !mongoose.Types.ObjectId.isValid(id));
 
@@ -56,11 +114,6 @@ export async function createPaymentIntent(req:Request, res:Response){
 
         // 3. Fetch the host (ownerId)
         const host = await userModel.findById(ownerId);
-        console.log("HOST:", host);
-console.log("stripeAccountId:", host?.stripeAccountId);
-console.log("isStripeVerified:", host?.isStripeVerified);
-
-
         if (!host) {
         return res.status(404).json({ message: "Host not found" });
         }
@@ -103,7 +156,7 @@ console.log("isStripeVerified:", host?.isStripeVerified);
             drivewayId,
             address,
             gameDate,
-            parkingTime,
+            parkingBegins,
             visiting_team
             }
         });

@@ -17,6 +17,8 @@ export async function addUser(req:Request,res:Response){
     }
 
     try{
+        console.log("Creating user:", req.body);
+
         const hashedPassword = await bcrypt.hash(password, 10); 
         const newUser = await UsersManager.createUser({
             firstName,
@@ -29,6 +31,8 @@ export async function addUser(req:Request,res:Response){
             Message: "Created user successfully!"
         })
     }catch(error){
+        console.error("User creation error:", error);
+
         return res.status(500).json({
             "error" : error
         })
@@ -297,7 +301,7 @@ export async function googleLogin(req:Request,res:Response,next:NextFunction) {
 export async function completeStripeOnboarding(req: Request, res: Response) {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
   try {
-    const userId = req.query.userId as string;
+    const userId = req.params.userId as string;
     if (!userId) return res.status(400).json({ message: "Missing userId" });
 
     const user = await userModel.findById(userId);
@@ -315,7 +319,7 @@ export async function completeStripeOnboarding(req: Request, res: Response) {
     }
 
     // Redirect back to your frontend
-    return res.redirect("https://parkli-front.vercel.app/");
+    return res.redirect("http://localhost:5173");
 
   } catch (err) {
     console.error(err);

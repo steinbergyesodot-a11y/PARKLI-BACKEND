@@ -7,6 +7,7 @@ import { IDriveway,IGame} from './interfce';
 const GameSchema = new Schema<IGame>({
     visiting_team: {type: String, required: true},
     game_time: {type: String, required: true},
+    parkingBegins: {type:String,required: true},
     date : {type: String, required: true},
     booked: {type: Boolean, required: false},
     blocked: {type: Boolean, required:true,default:false}

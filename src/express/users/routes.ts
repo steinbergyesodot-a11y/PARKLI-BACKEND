@@ -23,7 +23,7 @@ usersRouter.post('/login',Login)
 
 usersRouter.post('/google-login',googleLogin)
 
-usersRouter.get('/stripe/onboarding/complete',completeStripeOnboarding)
+usersRouter.get('/stripe/onboarding/complete/:userId',completeStripeOnboarding)
 
 usersRouter.get('/stripe/onboarding/refresh', refreshStripeOnboarding)
 
