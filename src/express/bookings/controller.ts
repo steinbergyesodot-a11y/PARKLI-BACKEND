@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { BookingManager } from "./manager";
 import { BookingModel } from "./model";
 import { userModel } from "../users/model";
@@ -20,7 +20,7 @@ function convertTo24Hour(timeStr: string): string {
 }
 
 
-export async function addBooking(req: Request, res: Response) {
+export async function addBooking(req: Request, res: Response, next:NextFunction) {
     
     const {
         ownerId,
@@ -35,14 +35,14 @@ export async function addBooking(req: Request, res: Response) {
     console.log(req.body)
     // 1. Validate required fields
     if (!ownerId || !drivewayId || !renterId || !address || !price || !gameDate || !parkingBegins || !visiting_team) {
-        return res.status(400).json({ message: "You're missing parameters" });
+        return next(new Error("You're missing parameters"))
     }
 
     // 2. Validate ObjectIds
     const ids = [ownerId, drivewayId, renterId];
     const invalidIds = ids.filter(id => !mongoose.Types.ObjectId.isValid(id));
     if (invalidIds.length > 0) {
-        return res.status(400).json({ message: "Invalid ID(s)", invalidIds });
+        return next(new Error(`invalid ids ${invalidIds}`))
     }
 
     try {
@@ -57,9 +57,7 @@ export async function addBooking(req: Request, res: Response) {
 
         // 5. Validate date/time format
         if (isNaN(bookingStart.getTime())) {
-            return res.status(400).json({
-                message: "Invalid date or time format. Expected YYYY-MM-DD and HH:mm."
-            });
+            return next(new Error("Invalid date or time format. Expected YYY-MM-DD and HH:mm."))
         }
 
         // 6. Calculate cancelBy (24 hours before)
@@ -89,53 +87,47 @@ export async function addBooking(req: Request, res: Response) {
         });
 
     } catch (error) {
-        console.error("Booking creation error:", error);
-        return res.status(500).json({
-            error: "internal server error"
-        });
+     next(error)
     }
 }
 
 
-export async function createPaymentIntent(req:Request, res:Response){
+export async function createPaymentIntent(req:Request, res:Response,next:NextFunction){
 
      const {ownerId,drivewayId,renterId,address,price,gameDate,parkingBegins,visiting_team} = req.body
     
         if(!ownerId || !drivewayId || !renterId || !address || !price || !gameDate ||!parkingBegins || !visiting_team){
-            return res.status(400).json({message : 'You`re missing parameters'})
+            return next(new Error("You're missing parameters"))
         }
 
         const ids = [ownerId, drivewayId, renterId];
         const invalidIds = ids.filter(id => !mongoose.Types.ObjectId.isValid(id));
 
         if (invalidIds.length > 0) {
-             return res.status(400).json({ message: "Invalid ID(s)", invalidIds });
+            return next(new Error(`invalid ids ${invalidIds}`))
+
         }
 
         // 3. Fetch the host (ownerId)
         const host = await userModel.findById(ownerId);
         if (!host) {
-        return res.status(404).json({ message: "Host not found" });
+            return next(new Error("Host not found"))
         }
 
         // 4. Check if host has a Stripe account
         if (!host.stripeAccountId) {
-        return res.status(400).json({
-            message: "Host has not started Stripe onboarding yet"
-        });
+           return next(new Error("Host has not started Stripe onboarding yet"))
         }
 
         // 5. Check if host completed onboarding
         if (!host.isStripeVerified) {
-        return res.status(400).json({
-            message: "Host has not completed Stripe onboarding"
-        });
+            return next(new Error("Host has not completed Stripe onboarding"))
         }
        // 6. Fetch driveway
         const driveway = await drivewayModel.findById(drivewayId);
 
         if (!driveway) {
-        return res.status(404).json({ message: "Driveway not found" });
+            return next(new Error("driveway not found"))
         }
 
         // 7. Calculate Stripe amount (in cents)
@@ -168,45 +160,34 @@ export async function createPaymentIntent(req:Request, res:Response){
         });
 
         } catch (error) {
-        console.error("Stripe error:", error);
-        return res.status(500).json({ message: "Stripe payment error" });
+        next(error)
         }
-
 }
 
-
-
-export async function getBookingByRenterId(req:Request, res:Response){
-    
-    const renterId = req.params.renterId as string
-        if(!renterId){
-            return res.status(400).json({Message : "missing user Id."})
-        }
-        if(!mongoose.Types.ObjectId.isValid(renterId)) {
-            res.status(400).json({ error: "Invalid playerId format" });
-            return
-        }
-    try{
-        const booking = await BookingManager.getBookingsByRenterId(renterId)
-        if(booking.length > 0){
-            return res.status(200).json({
-                message: "found bookings",
-                "bookings" : booking
-            })
-        }
-        else{
-            res.status(200).json({
-                message: "could'nt find bookings for this user"
-            })
-        }
-    }catch(error){
-        res.status(500).json({
-            "error" : error
-        })
+export async function getBookingByRenterId(req: Request, res: Response, next: NextFunction) {
+    const renterId = req.params.renterId as string;
+    if (!renterId) {
+        return next(new Error("Missing renter ID"));
     }
-    
+    if (!mongoose.Types.ObjectId.isValid(renterId)) {
+        return next(new Error("Invalid renterId format"));
+    }
 
+    try {
+        const bookings = await BookingManager.getBookingsByRenterId(renterId);
+        if (!bookings || bookings.length === 0) {
+            return next(new Error("No bookings found for this renter"));
+        }
+        return res.status(200).json({
+            message: "Found bookings",
+            bookings
+        });
+
+    } catch (error) {
+        next(error); 
+    }
 }
+
 
 export async function getAllBookings(req:Request, res:Response){
 
@@ -219,45 +200,51 @@ export async function updateBookingById(req:Request, res:Response){
       
 }
 
-export async function deleteBookingById(req:Request, res:Response){
-        const bookingId = req.params.bookingId as string
-        if(!bookingId){
-            return res.status(400).json({Message : "missing booking Id."})
-        }
-       
-        if(!mongoose.Types.ObjectId.isValid(bookingId)) {
-            res.status(400).json({ error: "Invalid playerId format" });
-            return
-        }
-        try{
-            const deletedBooking = await BookingManager.deleteBookingById(bookingId)
-            if(!deletedBooking){
-                return res.status(404).json({ message: "Booking not found" });
-            }
-            return res.json({ message: "Booking deleted successfully" });
-        }catch(error){
-            console.error("Error deleting booking:", error); 
-            return res.status(500).json({ message: "Server error" });
-        }
+export async function deleteBookingById(req: Request, res: Response, next: NextFunction) {
+    const bookingId = req.params.bookingId as string;
 
-}   
-
-
-
-export async function checkIfUserHasBooking(req: Request, res: Response) {
-  try {
-    const userId = req.params.userId as string;
-
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.json(false); // invalid ID → definitely no booking
+    // 1. Validate bookingId
+    if (!bookingId) {
+        return next(new Error("Missing booking ID"));
     }
 
-    const exists = await BookingModel.exists({ renterId: userId });
-    return res.json(Boolean(exists));
+    // 2. Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+        return next(new Error("Invalid bookingId format"));
+    }
 
-  } catch (error) {
-    console.error("Error checking booking:", error);
-    return res.status(500).send("Internal server error");
-  }
+    try {
+        // 3. Attempt deletion
+        const deletedBooking = await BookingManager.deleteBookingById(bookingId);
+
+        if (!deletedBooking) {
+            return next(new Error("Booking not found"));
+        }
+
+        // 4. Success
+        return res.status(200).json({
+            message: "Booking deleted successfully"
+        });
+
+    } catch (error) {
+        next(error); // Pass DB/server errors to middleware
+    }
 }
 
+
+
+export async function checkIfUserHasBooking(req: Request, res: Response, next: NextFunction) {
+    const userId = req.params.userId as string;
+    if (!userId) {
+        return next(new Error("Missing user ID"));
+    }
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return next(new Error("Invalid userId format"));
+    }
+    try {
+        const exists = await BookingModel.exists({ renterId: userId });
+        return res.status(200).json(Boolean(exists));
+    } catch (error) {
+        next(error); 
+    }
+}

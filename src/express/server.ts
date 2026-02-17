@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import connect from "..";
 import { appRouter } from "./router";
 import routerWeb from "./webhook/routes.stripewebhook";
+import errorHandler from "../utils/middleware/errorHandler";
 
 dotenv.config();
 connect();
@@ -30,6 +31,8 @@ app.use(express.json());
 
 // 4️⃣ Your normal API routes
 app.use(appRouter);
+
+app.use(errorHandler)
 
 app.listen(PORT, () => {
   console.log(`server running on port: ${PORT}`);

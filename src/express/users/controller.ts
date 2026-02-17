@@ -7,78 +7,66 @@ import { OAuth2Client } from "google-auth-library";
 import { userModel } from './model';
 import Stripe from 'stripe';
 
-
-
-
-export async function addUser(req:Request,res:Response){
-    const {firstName,lastName,email,password,roles} = req.body?? {}
-    if(!firstName || !lastName || !email || !password || !roles){
-        return res.status(400).json({Message : 'You`re missing parameters'})
+export async function addUser(req: Request, res: Response, next: NextFunction) {
+    const { firstName, lastName, email, password, roles } = req.body;
+    if (!firstName || !lastName || !email || !password || !roles) {
+        return next(new Error("You're missing parameters"));
     }
-
-    try{
-        console.log("Creating user:", req.body);
-
-        const hashedPassword = await bcrypt.hash(password, 10); 
-        const newUser = await UsersManager.createUser({
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await UsersManager.createUser({
             firstName,
             lastName,
             email,
-            password : hashedPassword,
+            password: hashedPassword,
             roles
-        })
+        });
+
         return res.status(201).json({
             Message: "Created user successfully!"
-        })
-    }catch(error){
-        console.error("User creation error:", error);
+        });
 
-        return res.status(500).json({
-            "error" : error
-        })
+    } catch (error) {
+        next(error); 
     }
 }
 
 
-export async function getUserById(req:Request,res:Response){
-    const userId = req.params.userId as string
-    if(!userId){
-        return res.status(400).json({Message : "missing user Id."})
+export async function getUserById(req: Request, res: Response, next: NextFunction) {
+    const userId = req.params.userId as string;
+    if (!userId) {
+        return next(new Error("Missing user ID."));
     }
-    if(!mongoose.Types.ObjectId.isValid(userId)) {
-        res.status(400).json({ error: "Invalid playerId format" });
-        return
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return next(new Error("Invalid userId format."));
     }
-    try{
-        const user = await UsersManager.getUserById(userId)
-        if(user){
-            res.status(200).json({
-                user
-            })
+
+    try {
+        const user = await UsersManager.getUserById(userId);
+
+        if (!user) {
+            throw new Error("User not found")
         }
-        else{
-            return res.status(404).json({ message: "User not found." });
-        }
-    }catch(error){
-        res.status(500).json({
-            error : "server error"
-        })
+
+        return res.status(200).json({ user });
+
+    } catch (error) {
+        next(error);
     }
 }
 
 
 
-export async function getAllUsers(req:Request,res:Response){
+export async function getAllUsers(req:Request,res:Response,next:NextFunction){
       try{
             const users = await UsersManager.getAllUsers()
             if (users.length === 0) {
-                  return res.status(404).json({ message: "No users found" });
+                return next(new Error("Could'nt find any users"));
+
             }
-            res.status(200).json({users})
+            res.status(200).json({"found users":users})
          }catch(error){
-            res.status(500).json({
-                error : "internal server error"
-            })
+           next(error)
          }
 }
 
@@ -87,18 +75,17 @@ export async function deleteUserById(req:Request,res:Response){
 }
 
 
-export async function updateFirstName(req:Request,res:Response){
+export async function updateFirstName(req:Request,res:Response,next:NextFunction){
     const userId = req.params.userId as string
     const firstName = req.params.firstName
     if(!userId){
-        return res.status(400).json({Message : "missing user Id."})
+        return next(new Error("Missing user ID"))
     }
     if(!mongoose.Types.ObjectId.isValid(userId)) {
-        res.status(400).json({ error: "Invalid playerId format" });
-        return
+       return next(new Error("Invalid user id format"))
     }
      if(!firstName){
-        return res.status(400).json({Message : "missing new name."})
+        return next(new Error("missing user first name"))
     }
     try{
         const updatedUser = await userModel.findByIdAndUpdate(
@@ -111,24 +98,24 @@ export async function updateFirstName(req:Request,res:Response){
             updatedUser
         })
     }catch(error){
-        res.status(500).json({
-            "error":error
-        })
+       next(error)
     }
 }
 
-export async function updateLastName(req:Request,res:Response){
+export async function updateLastName(req:Request,res:Response,next:NextFunction){
     const userId = req.params.userId as string
     const lastName = req.params.lastName
     if(!userId){
-        return res.status(400).json({Message : "missing user Id."})
+                return next(new Error("Missing user ID"))
+
     }
     if(!mongoose.Types.ObjectId.isValid(userId)) {
-        res.status(400).json({ error: "Invalid playerId format" });
-        return
+        return next(new Error("Invalid user id format"))
+
     }
      if(!lastName){
-        return res.status(400).json({Message : "missing new name."})
+        return next(new Error("missing user last name"))
+
     }
     try{
         const updatedUser = await userModel.findByIdAndUpdate(
@@ -141,24 +128,24 @@ export async function updateLastName(req:Request,res:Response){
             updatedUser
         })
     }catch(error){
-        res.status(500).json({
-            "error":error
-        })
+      next(error)
     }
 }
 
-export async function updateEmail(req:Request,res:Response){
+export async function updateEmail(req:Request,res:Response,next:NextFunction){
     const userId = req.params.userId as string
     const email = req.params.email
     if(!userId){
-        return res.status(400).json({Message : "missing user Id."})
+                return next(new Error("Missing user ID"))
+
     }
     if(!mongoose.Types.ObjectId.isValid(userId)) {
-        res.status(400).json({ error: "Invalid userId format" });
-        return
+               return next(new Error("Invalid user id format"))
+
     }
      if(!email){
-        return res.status(400).json({Message : "missing new email address."})
+                return next(new Error("missing user first name"))
+
     }
     try{
         const updatedUser = await userModel.findByIdAndUpdate(
@@ -171,9 +158,7 @@ export async function updateEmail(req:Request,res:Response){
             updatedUser
         })
     }catch(error){
-        res.status(500).json({
-            "error":error
-        })
+        next(error)
     }
 }
 
@@ -182,25 +167,17 @@ export async function updateEmail(req:Request,res:Response){
 
 export async function Login(req:Request,res:Response,next:NextFunction){
     const {email,password} = req.body
-
     if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+        return next(new Error("Email and password are required"))
     }
     try{
         const userFound = await UsersManager.Login(email,password)
         if(userFound.success === false){
-            return res.status(400).json({
-                message : "Email or password invalid!"
-            })
+            return next(new Error("Email or password invalid!"))
         }
         if (!userFound.success || !userFound.user){ 
-            return res.status(400).json({
-                 message: "Email or password invalid!"
-            });
+            return next(new Error("Email or password invalid!"))
         }
-
-        
-        
         const payload = {
             firstName: userFound.user?.firstName,
             lastName: userFound.user?.lastName,
@@ -210,12 +187,9 @@ export async function Login(req:Request,res:Response,next:NextFunction){
             drivewayIds : userFound.user.drivewayIds,
             authProvider: userFound.user.authProvider
         };
-
-
         if (!process.env.JWT_SECRET_KEY) {
              throw new Error("JWT_SECRET is not defined in environment variables");
         }
-        
         const token = jwt.sign(
             payload,
             process.env.JWT_SECRET_KEY,
@@ -223,14 +197,9 @@ export async function Login(req:Request,res:Response,next:NextFunction){
             expiresIn: '1h'
             }
         )
-
-
         return res.status(200).json({
              message: 'Login successful', token ,payload
         });
-        
-
-
     }catch(error){
        next(error)
     }
@@ -242,7 +211,7 @@ export async function googleLogin(req:Request,res:Response,next:NextFunction) {
     const { accessToken } = req.body;
 
     if (!accessToken) {
-      return res.status(400).json({ message: "Missing Google access token" });
+        return next(new Error("missing access token"))
     }
 
     // 1. Verify Google token
@@ -293,44 +262,52 @@ export async function googleLogin(req:Request,res:Response,next:NextFunction) {
     });
 
   } catch (error) {
-    console.error(error);
     next(error);
   }
 }
-
-export async function completeStripeOnboarding(req: Request, res: Response) {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-  try {
+export async function completeStripeOnboarding(req: Request, res: Response, next: NextFunction) {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
     const userId = req.params.userId as string;
-    if (!userId) return res.status(400).json({ message: "Missing userId" });
 
-    const user = await userModel.findById(userId);
-    if (!user || !user.stripeAccountId) {
-      return res.status(404).json({ message: "User or Stripe account not found" });
+    // 1. Validate userId
+    if (!userId) {
+        return next(new Error("Missing user ID"));
     }
 
-    // Retrieve Stripe account status
-    const account = await stripe.accounts.retrieve(user.stripeAccountId);
+    try {
+        // 2. Find user
+        const user = await userModel.findById(userId);
 
-    // Check if onboarding is complete
-    if (account.details_submitted && account.charges_enabled) {
-      user.isStripeVerified = true;
-      await user.save();
+        if (!user) {
+            return next(new Error("User not found"));
+        }
+
+        if (!user.stripeAccountId) {
+            return next(new Error("Stripe account not found for this user"));
+        }
+
+        // 3. Retrieve Stripe account
+        const account = await stripe.accounts.retrieve(user.stripeAccountId);
+
+        // 4. Check onboarding completion
+        if (account.details_submitted && account.charges_enabled) {
+            user.isStripeVerified = true;
+            await user.save();
+        }
+
+        // 5. Redirect back to frontend
+        return res.redirect("http://localhost:5173");
+
+    } catch (error) {
+        next(error); // Pass ALL errors to your error middleware
     }
-
-    // Redirect back to your frontend
-    return res.redirect("http://localhost:5173");
-
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Error completing onboarding" });
-  }
 }
+
 
 
 // controllers/stripeController.js
 
-export const refreshStripeOnboarding = async (req:Request, res:Response) => {
+export const refreshStripeOnboarding = async (req:Request, res:Response, next:NextFunction) => {
         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
   try {
@@ -351,7 +328,6 @@ console.log("RETURN URL:", `${process.env.BACKEND_URL}/api/users/stripe/onboardi
 
     res.redirect(link.url);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Error refreshing Stripe onboarding");
+    next(err)
   }
 };
