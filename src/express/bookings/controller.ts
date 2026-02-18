@@ -7,6 +7,7 @@ import { drivewayModel } from "../driveways/model";
 import stripe1 from "stripe";
 import { stripe } from "../stripe";
 import { compareSync } from "bcrypt";
+import { DrivewayManager } from "../driveways/manager";
 
 
 function convertTo24Hour(timeStr: string): string {
@@ -19,6 +20,33 @@ function convertTo24Hour(timeStr: string): string {
     });
 }
 
+function buildChicagoDate(dateStr: string, timeStr: string) {
+  // 1. Split date
+  const [year, month, day] = dateStr.split("-").map(Number);
+
+  // 2. Split time
+  const [hour, minute] = timeStr.split(":").map(Number);
+
+  // 3. Create a Date *as if* it's Chicago time
+  const chicago = new Date(Date.UTC(year, month - 1, day, hour, minute));
+
+  // 4. Get Chicago offset for that date (DST-aware)
+  const offset = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    timeZoneName: "short"
+  })
+    .formatToParts(chicago)
+    .find(p => p.type === "timeZoneName")!.value;
+
+  // Convert CST/CDT → offset hours
+  const offsetHours = offset === "CST" ? -6 : -5;
+
+  // 5. Apply offset
+  chicago.setHours(chicago.getHours() - offsetHours);
+
+  return chicago;
+}
+
 
 export async function addBooking(req: Request, res: Response, next:NextFunction) {
     
@@ -29,16 +57,14 @@ export async function addBooking(req: Request, res: Response, next:NextFunction)
         address,
         price,
         gameDate,
+        paymentIntentId,
         parkingBegins,
         visiting_team
     } = req.body;
-    console.log(req.body)
-    // 1. Validate required fields
-    if (!ownerId || !drivewayId || !renterId || !address || !price || !gameDate || !parkingBegins || !visiting_team) {
+    if (!ownerId || !drivewayId || !renterId || !address || !price || !gameDate || !parkingBegins|| !paymentIntentId || !visiting_team) {
         return next(new Error("You're missing parameters"))
     }
 
-    // 2. Validate ObjectIds
     const ids = [ownerId, drivewayId, renterId];
     const invalidIds = ids.filter(id => !mongoose.Types.ObjectId.isValid(id));
     if (invalidIds.length > 0) {
@@ -53,7 +79,8 @@ export async function addBooking(req: Request, res: Response, next:NextFunction)
         }
 
         // 4. Build booking start datetime
-        const bookingStart = new Date(`${gameDate}T${normalizedTime}`);
+        // Convert to Chicago time using Intl API
+       const bookingStart = buildChicagoDate(gameDate, normalizedTime);
 
         // 5. Validate date/time format
         if (isNaN(bookingStart.getTime())) {
@@ -62,8 +89,8 @@ export async function addBooking(req: Request, res: Response, next:NextFunction)
 
         // 6. Calculate cancelBy (24 hours before)
         const cancelBy = new Date(bookingStart.getTime() - 24 * 60 * 60 * 1000);
-        const cancelByString = cancelBy.toISOString();
 
+        const cancelByString = cancelBy.toISOString();
         // 7. Build booking object
         const bookingData = {
             ownerId,
@@ -72,6 +99,7 @@ export async function addBooking(req: Request, res: Response, next:NextFunction)
             address,
             price,
             gameDate,
+            paymentIntentId,
             parkingTime: normalizedTime,
             visiting_team,
             cancelBy: cancelByString,
@@ -248,3 +276,35 @@ export async function checkIfUserHasBooking(req: Request, res: Response, next: N
         next(error); 
     }
 }
+
+
+export async function cancelBooking(req:Request,res:Response,next: NextFunction){
+    const {drivewayId,gameDate,bookingId} = req.body
+    if(!drivewayId || !gameDate || !bookingId){
+        return next(new Error("missing parameters"))
+    }
+    try{
+        const booking = await BookingModel.findById(bookingId)
+        if (!booking) { 
+            return next(new Error("Booking not found"));
+        }
+        const now = new Date();
+        const cancelDeadline = new Date(booking.cancelBy);
+        if (now > cancelDeadline) { 
+            return next(new Error("Cancellation window has passed"));
+        }
+        const refund = await stripe.refunds.create({ 
+            payment_intent: booking.paymentIntentId 
+        });
+
+        await BookingModel.findByIdAndDelete(bookingId); // delete booking from booking model
+
+        const updatedDriveway = await DrivewayManager.updateDrivewayCancelBooking(drivewayId, gameDate); // update availablity
+
+        if (!updatedDriveway) {
+            return next(new Error("Driveway not found"));
+        }
+    }catch(error){
+        next(error)
+    }
+} 

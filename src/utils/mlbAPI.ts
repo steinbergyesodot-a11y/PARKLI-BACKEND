@@ -9,9 +9,9 @@ const CUBS_ID = 112;
 
 export type GameInfo = {
   date: string;
-  game_time: string;
+  gameTime: string;
   parkingBegins: string;
-  visiting_team: string;
+  visitingTeam: string;
   booked: boolean;
 };
 
@@ -50,29 +50,30 @@ export async function getRedSoxHomeGamesNextMonth() {
         const date = dateBlock.date;
         const visitingTeam = game.teams.away.team.name;
 
-        let game_time = "TBD";
+        let gameTime = "TBD";
 
         if (game.gameDate) {
           const venueTimeZone = game.venue?.timeZone?.id || "America/Chicago";
           const gameDate = new Date(game.gameDate);
 
           if (!isNaN(gameDate.getTime())) {
-            game_time = gameDate.toLocaleTimeString("en-US", {
+            gameTime = gameDate.toLocaleTimeString("en-US", {
               hour: "2-digit",
               minute: "2-digit",
-              timeZone: venueTimeZone
+              timeZone: "America/Chicago"
+
             });
           }
         }
 
         // NEW: compute parkingBegins
-        const parkingBegins = subtractOneHour(game_time);
+        const parkingBegins = subtractOneHour(gameTime);
 
         games.push({
           date,
-          game_time,
+          gameTime,
           parkingBegins,
-          visiting_team: visitingTeam,
+          visitingTeam: visitingTeam,
           booked: false
         });
       }

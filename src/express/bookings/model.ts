@@ -28,6 +28,7 @@ const BookingSchema = new mongoose.Schema<IBooking>({
     address: { type: String, required: true },
     gameDate: { type: String, required: true },
     parkingTime: { type: String, required: true },
+    paymentIntentId: {type: String, required: true},
     cancelBy: {type: String, required: true},
     price: { type: Number, required: true},
     visiting_team: { type: String, required: true },

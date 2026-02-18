@@ -1,6 +1,6 @@
 import express from 'express'
 import {Router} from 'express'
-import { addBooking, getAllBookings, getBookingByRenterId, updateBookingById, deleteBookingById,checkIfUserHasBooking, createPaymentIntent } from './controller';
+import { addBooking, getAllBookings, getBookingByRenterId, updateBookingById, deleteBookingById,checkIfUserHasBooking, createPaymentIntent, cancelBooking } from './controller';
 
 
 
@@ -22,6 +22,8 @@ bookingRouter.get('/',getAllBookings)
 bookingRouter.put('/:bookingId',updateBookingById)
 
 bookingRouter.delete('/:bookingId',deleteBookingById)
+
+bookingRouter.post('/cancelBooking',cancelBooking)
 
 
 
