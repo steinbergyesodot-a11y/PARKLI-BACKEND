@@ -1,0 +1,21 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const authenticateToken_1 = require("../../utils/middleware/authenticateToken");
+const controller_1 = require("./controller");
+const multerUpload_1 = require("../../utils/middleware/multerUpload");
+const drivewayRouter = express_1.default.Router();
+drivewayRouter.post('/', authenticateToken_1.authenticateToken, multerUpload_1.upload.array('images', 10), controller_1.addDriveway);
+drivewayRouter.get('/:drivewayId', controller_1.getDrivewayById);
+drivewayRouter.get('/getGames/:ownerId', controller_1.getGamesByOwnerId);
+drivewayRouter.get('/', controller_1.getAllDriveways);
+drivewayRouter.get('/getAllDrivewaysByUserId/:userId', controller_1.getAllDrivewaysByUserId);
+drivewayRouter.put('/:drivewayId/:gameDate', controller_1.updateDrivewayById);
+drivewayRouter.put('/:drivewayId/block/:gameDate', controller_1.blockGame);
+drivewayRouter.put('/:drivewayId/unblock/:gameDate', controller_1.unblockGame);
+drivewayRouter.put('/updateDrivewayCancleBooking/:drivewayId/:gameDate', controller_1.updateDrivewayCancleBooking);
+drivewayRouter.delete('/:deleteDrivewayById', controller_1.deleteDriveway);
+exports.default = drivewayRouter;

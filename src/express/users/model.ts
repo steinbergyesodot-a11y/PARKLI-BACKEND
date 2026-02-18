@@ -1,0 +1,45 @@
+import mongoose, { Schema } from 'mongoose'
+import { IUser } from './interface';
+
+
+const userSchema = new mongoose.Schema<IUser>({
+    firstName: {
+        type: String,
+        required: true
+    },
+    lastName: {
+        type: String,
+        required: false
+    },
+     email: {
+        type: String,
+        required: true
+    },
+     password: {
+        type: String,
+        required: false,
+        min: 5
+    },
+    roles:{
+        type:[String],
+        enum: ["renter", "host"],
+        default: ["renter"]
+    },
+    stripeAccountId:{
+        type:String,
+        required:false
+    },
+    isStripeVerified:{
+        type: Boolean,
+        required:false
+    },
+    drivewayIds: {
+        type: [String],
+    },
+    googleId: String,
+    authProvider: { type: String, default: "local" }
+  
+   
+})
+
+export const userModel = mongoose.model<IUser>('user', userSchema);
