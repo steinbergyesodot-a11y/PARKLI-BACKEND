@@ -24,7 +24,8 @@ function errorHandler(err: Error, req: Request, res: Response, next: NextFunctio
         "Invalid rules format",
         "invalid ids",
         "invalid date or time format",
-        "Cancellation window has passed"   // ⭐ added
+        "Cancellation window has passed" ,
+        "Email already in use"  // ⭐ added
     ];
 
     if (badRequestErrors.includes(err.message)) {

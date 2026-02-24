@@ -1,6 +1,12 @@
+export enum UserType{
+  Guest = "Guest",
+  Admin = "Admin"
+}
+
 export interface IUser {
   firstName: string;
-  lastName?: string;     
+  lastName?: string;  
+  userType: UserType;   
   email: string;
   password?: string;      
   roles: ("renter" | "host")[];

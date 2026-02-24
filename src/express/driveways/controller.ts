@@ -74,8 +74,8 @@ export async function addDriveway(req: Request, res: Response, next: NextFunctio
 
         const userId = user._id.toString();
 
-        const returnUrl = `${base}/api/users/stripe/onboarding/complete/${encodeURIComponent(userId)}`;
-        const refreshUrl = `${base}/api/users/stripe/onboarding/refresh?userId=${encodeURIComponent(userId)}`;
+        const returnUrl = `http://localhost:5173/Onboard-Complete`;
+        const refreshUrl = `http://localhost:517/Onboard-Retry`;
 
         const onboardingLink = await stripe.accountLinks.create({
             account: user.stripeAccountId,

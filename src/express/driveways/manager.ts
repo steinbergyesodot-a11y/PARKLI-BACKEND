@@ -1,6 +1,6 @@
 import { drivewayModel } from "./model"
 import axios from 'axios';
-import { getRedSoxHomeGamesNextMonth } from "../../utils/mlbAPI";
+import { getCubsHomeGames } from "../../utils/mlbAPI";
 import { IDriveway,IGame } from "./interfce";
 import { GameInfo } from "../../utils/mlbAPI";
 
@@ -10,7 +10,7 @@ import { GameInfo } from "../../utils/mlbAPI";
 export class DrivewayManager{
     static async createDriveway(driveway : IDriveway){
 
-       const games: GameInfo[] = await getRedSoxHomeGamesNextMonth()
+       const games: GameInfo[] = await getCubsHomeGames()
 
        return await drivewayModel.create({
              ...driveway,

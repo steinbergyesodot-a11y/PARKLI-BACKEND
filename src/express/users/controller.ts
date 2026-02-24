@@ -6,11 +6,16 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from "google-auth-library";
 import { userModel } from './model';
 import Stripe from 'stripe';
+import { UserType } from './interface';
 
 export async function addUser(req: Request, res: Response, next: NextFunction) {
     const { firstName, lastName, email, password, roles } = req.body;
     if (!firstName || !lastName || !email || !password || !roles) {
         return next(new Error("You're missing parameters"));
+    }
+    const exists = await userModel.findOne({email})
+    if(exists){
+        return next(new Error("Email already in use"))
     }
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -18,12 +23,13 @@ export async function addUser(req: Request, res: Response, next: NextFunction) {
             firstName,
             lastName,
             email,
+            userType: UserType.Guest,
             password: hashedPassword,
             roles
         });
 
         return res.status(201).json({
-            Message: "Created user successfully!"
+            message: "Created user successfully!"
         });
 
     } catch (error) {
@@ -265,69 +271,97 @@ export async function googleLogin(req:Request,res:Response,next:NextFunction) {
     next(error);
   }
 }
-export async function completeStripeOnboarding(req: Request, res: Response, next: NextFunction) {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-    const userId = req.params.userId as string;
 
-    // 1. Validate userId
-    if (!userId) {
-        return next(new Error("Missing user ID"));
-    }
+// export async function completeStripeOnboarding(req: Request, res: Response, next: NextFunction) {
+//     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+//     const userId = req.params.userId as string;
 
-    try {
-        // 2. Find user
-        const user = await userModel.findById(userId);
+//     // 1. Validate userId
+//     if (!userId) {
+//         return next(new Error("Missing user ID"));
+//     }
 
-        if (!user) {
-            return next(new Error("User not found"));
-        }
+//     try {
+//         // 2. Find user
+//         const user = await userModel.findById(userId);
 
-        if (!user.stripeAccountId) {
-            return next(new Error("Stripe account not found for this user"));
-        }
+//         if (!user) {
+//             return next(new Error("User not found"));
+//         }
 
-        // 3. Retrieve Stripe account
-        const account = await stripe.accounts.retrieve(user.stripeAccountId);
+//         if (!user.stripeAccountId) {
+//             return next(new Error("Stripe account not found for this user"));
+//         }
 
-        // 4. Check onboarding completion
-        if (account.details_submitted && account.charges_enabled) {
-            user.isStripeVerified = true;
-            await user.save();
-        }
+//         // 3. Retrieve Stripe account
+//         const account = await stripe.accounts.retrieve(user.stripeAccountId);
 
-        // 5. Redirect back to frontend
-        return res.redirect("http://localhost:5173");
+//         // 4. Check onboarding completion
+//         if (account.details_submitted && account.charges_enabled) {
+//             user.isStripeVerified = true;
+//             await user.save();
+//         }
 
-    } catch (error) {
-        next(error); // Pass ALL errors to your error middleware
-    }
-}
+//         // 5. Redirect back to frontend
+//         return res.redirect("http://localhost:5173");
+
+//     } catch (error) {
+//         next(error); // Pass ALL errors to your error middleware
+//     }
+// }
+
+
 
 
 
 // controllers/stripeController.js
 
-export const refreshStripeOnboarding = async (req:Request, res:Response, next:NextFunction) => {
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+// export const refreshStripeOnboarding = async (req:Request, res:Response, next:NextFunction) => {
+//         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+
+//   try {
+//     const userId = req.query.userId;
+//     const user = await userModel.findById(userId);
+
+//     const link = await stripe.accountLinks.create({
+//       account: user.stripeAccountId,
+//       refresh_url: `${process.env.BACKEND_URL}/api/users/stripe/onboarding/refresh?userId=${userId}`,
+//       return_url: `${process.env.BACKEND_URL}/api/users/stripe/onboarding/complete?userId=${userId}`,
+//       type: "account_onboarding"
+//     });
+//     res.redirect(link.url);
+//   } catch (err) {
+//     next(err)
+//   }
+// };
+
+
+export async function checkStripeStatus(req:Request, res:Response, next:NextFunction) {
+            const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
   try {
-    const userId = req.query.userId;
+    const userId = req.user._id;
     const user = await userModel.findById(userId);
 
-    const link = await stripe.accountLinks.create({
-      account: user.stripeAccountId,
-      refresh_url: `${process.env.BACKEND_URL}/api/users/stripe/onboarding/refresh?userId=${userId}`,
-      return_url: `${process.env.BACKEND_URL}/api/users/stripe/onboarding/complete?userId=${userId}`,
-      type: "account_onboarding"
-    });
-    console.log("BACKEND_URL:", process.env.BACKEND_URL);
-console.log("REFRESH URL:", `${process.env.BACKEND_URL}/api/users/stripe/onboarding/refresh?userId=${userId}`);
-console.log("RETURN URL:", `${process.env.BACKEND_URL}/api/users/stripe/onboarding/complete?userId=${userId}`);
+    if (!user || !user.stripeAccountId) {
+      return res.json({ verified: false });
+    }
 
-    
+    const account = await stripe.accounts.retrieve(user.stripeAccountId);
 
-    res.redirect(link.url);
+    const verified =
+      account.details_submitted &&
+      account.charges_enabled &&
+      account.payouts_enabled;
+
+    if (verified && !user.isStripeVerified) {
+      user.isStripeVerified = true;
+      await user.save();
+    }
+
+    return res.json({ verified });
   } catch (err) {
-    next(err)
+    next(err);
   }
-};
+}
+

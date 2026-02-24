@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose'
-import { IUser } from './interface';
+import { IUser,UserType } from './interface';
 
 
 const userSchema = new mongoose.Schema<IUser>({
@@ -20,7 +20,13 @@ const userSchema = new mongoose.Schema<IUser>({
         required: false,
         min: 5
     },
-    roles:{
+    userType: { 
+        type: String,
+         enum: Object.values(UserType), 
+         default: UserType.Guest,
+        required: true 
+    },
+     roles:{
         type:[String],
         enum: ["renter", "host"],
         default: ["renter"]

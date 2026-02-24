@@ -35,6 +35,9 @@ const BookingSchema = new mongoose.Schema<IBooking>({
     bookedAt: { type: Date, default: Date.now }
 })
    
+BookingSchema.index({ drivewayId: 1 });
+BookingSchema.index({ renterId: 1 });
+
 
 
 export const BookingModel = mongoose.model<IBooking>('Booking', BookingSchema);

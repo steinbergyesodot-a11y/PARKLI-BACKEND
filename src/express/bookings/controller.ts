@@ -48,8 +48,7 @@ function buildChicagoDate(dateStr: string, timeStr: string) {
 }
 
 
-export async function addBooking(req: Request, res: Response, next:NextFunction) {
-    
+export async function addBooking(req: Request, res: Response, next: NextFunction) {
     const {
         ownerId,
         drivewayId,
@@ -61,61 +60,75 @@ export async function addBooking(req: Request, res: Response, next:NextFunction)
         parkingBegins,
         visiting_team
     } = req.body;
-    if (!ownerId || !drivewayId || !renterId || !address || !price || !gameDate || !parkingBegins|| !paymentIntentId || !visiting_team) {
-        return next(new Error("You're missing parameters"))
+
+    if (!ownerId || !drivewayId || !renterId || !address || !price || !gameDate || !parkingBegins || !paymentIntentId || !visiting_team) {
+        return next(new Error("You're missing parameters"));
     }
 
     const ids = [ownerId, drivewayId, renterId];
     const invalidIds = ids.filter(id => !mongoose.Types.ObjectId.isValid(id));
     if (invalidIds.length > 0) {
-        return next(new Error(`invalid ids ${invalidIds}`))
+        return next(new Error(`invalid ids ${invalidIds}`));
     }
 
     try {
-        // 3. Normalize time: "7:00" → "07:00"
+        // Normalize time: "7:00" → "07:00"
         let normalizedTime = parkingBegins;
         if (parkingBegins.length === 4) {
             normalizedTime = "0" + parkingBegins;
         }
 
-        // 4. Build booking start datetime
-        // Convert to Chicago time using Intl API
-       const bookingStart = buildChicagoDate(gameDate, normalizedTime);
+        // Build booking start datetime
+        const bookingStart = buildChicagoDate(gameDate, normalizedTime);
 
-        // 5. Validate date/time format
         if (isNaN(bookingStart.getTime())) {
-            return next(new Error("Invalid date or time format. Expected YYY-MM-DD and HH:mm."))
+            return next(new Error("Invalid date or time format. Expected YYYY-MM-DD and HH:mm."));
         }
 
-        // 6. Calculate cancelBy (24 hours before)
+        // Calculate cancelBy (24 hours before)
         const cancelBy = new Date(bookingStart.getTime() - 24 * 60 * 60 * 1000);
-
         const cancelByString = cancelBy.toISOString();
-        // 7. Build booking object
-        const bookingData = {
-            ownerId,
-            drivewayId,
-            renterId,
-            address,
-            price,
-            gameDate,
-            paymentIntentId,
-            parkingTime: normalizedTime,
-            visiting_team,
-            cancelBy: cancelByString,
-            bookedAt: new Date()
-        };
 
-        // 8. Save booking
-        const newBooking = await BookingManager.createBooking(bookingData);
+        // -------------------------------
+        // ⭐ ATOMIC BOOKING LOGIC ⭐
+        // -------------------------------
+        const booking = await BookingModel.findOneAndUpdate(
+            {
+                drivewayId,
+                gameDate,
+                // This ensures we only book if no booking exists yet
+                isBooked: { $ne: true }
+            },
+            {
+                isBooked: true,
+                ownerId,
+                renterId,
+                address,
+                price,
+                paymentIntentId,
+                parkingTime: normalizedTime,
+                visiting_team,
+                cancelBy: cancelByString,
+                bookedAt: new Date()
+            },
+            {
+                new: true,
+                upsert: false // Do NOT create a new doc unless the filter matches
+            }
+        );
+
+        // If booking is null → someone else booked it first
+        if (!booking) {
+            return next(new Error("Sorry, this driveway was just booked by someone else."));
+        }
 
         return res.status(201).json({
             message: "Created new booking",
-            booking: newBooking
+            booking
         });
 
     } catch (error) {
-     next(error)
+        next(error);
     }
 }
 
@@ -214,18 +227,6 @@ export async function getBookingByRenterId(req: Request, res: Response, next: Ne
     } catch (error) {
         next(error); 
     }
-}
-
-
-export async function getAllBookings(req:Request, res:Response){
-
-}
-
-export async function updateBookingById(req:Request, res:Response){
-      
-       
-
-      
 }
 
 export async function deleteBookingById(req: Request, res: Response, next: NextFunction) {
