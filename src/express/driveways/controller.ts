@@ -113,8 +113,8 @@ export async function addDriveway(req: Request, res: Response, next: NextFunctio
       await user.save();
     }
 
-    const returnUrl = `http://localhost:5173/Onboard-Complete`;
-    const refreshUrl = `http://localhost:5173/Onboard-Retry`;
+    const returnUrl = `https://parkli-front.vercel.app/Onboard-Complete`;
+    const refreshUrl = `https://parkli-front.vercel.app/Onboard-Retry`;
 
     const onboardingLink = await stripe.accountLinks.create({
       account: user.stripeAccountId,
