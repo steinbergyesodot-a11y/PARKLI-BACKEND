@@ -11,12 +11,16 @@ const connect = async () => {
     if (!dbURL) {
         throw new Error('error');
     }
+    mongoose_1.default.connection.on("error", err => {
+        console.error("❌ Mongoose runtime error:", err);
+    });
     try {
         await mongoose_1.default.connect(dbURL);
         console.log("Connected to MongoDB:", process.env.DATABASE_URI);
     }
     catch (error) {
-        console.log(error);
+        console.error("❌ MongoDB connection error:");
+        console.error(error);
     }
 };
 exports.default = connect;
