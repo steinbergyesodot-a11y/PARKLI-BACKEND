@@ -8,6 +8,10 @@ const connect = async () => {
     if(!dbURL){
         throw new Error('error')
     }
+    mongoose.connection.on("error", err => {
+    console.error("❌ Mongoose runtime error:", err);
+});
+
     try{
         await mongoose.connect(dbURL)
         
@@ -15,7 +19,8 @@ const connect = async () => {
         console.log("Connected to MongoDB:", process.env.DATABASE_URI);
 
     }catch(error){
-        console.log(error)
+        console.error("❌ MongoDB connection error:");
+    console.error(error);
     }
 
 }
