@@ -38,6 +38,7 @@ const mongoose_1 = __importStar(require("mongoose"));
 const GameSchema = new mongoose_1.Schema({
     visiting_team: { type: String, required: true },
     game_time: { type: String, required: true },
+    parkingBegins: { type: String, required: true },
     date: { type: String, required: true },
     booked: { type: Boolean, required: false },
     blocked: { type: Boolean, required: true, default: false }

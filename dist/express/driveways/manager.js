@@ -5,7 +5,7 @@ const model_1 = require("./model");
 const mlbAPI_1 = require("../../utils/mlbAPI");
 class DrivewayManager {
     static async createDriveway(driveway) {
-        const games = await (0, mlbAPI_1.getRedSoxHomeGamesNextMonth)();
+        const games = await (0, mlbAPI_1.getCubsHomeGames)();
         return await model_1.drivewayModel.create({
             ...driveway,
             games: games
@@ -20,7 +20,7 @@ class DrivewayManager {
     }
     static async getGamesByOwnerId(ownerId) {
         const driveway = await model_1.drivewayModel.findOne({ ownerId });
-        return driveway?.games || [];
+        return (driveway === null || driveway === void 0 ? void 0 : driveway.games) || [];
     }
     static async updateDrivewayById(drivewayId, gameDate) {
         const normalized = gameDate.trim();
@@ -63,9 +63,6 @@ class DrivewayManager {
         if (!driveway) {
             throw new Error("Driveway not found");
         }
-        console.log("Driveway ID:", drivewayId);
-        console.log("Incoming gameDate:", gameDate);
-        console.log("Driveway.games:", driveway.games);
         if (!driveway.games || driveway.games.length === 0) {
             throw new Error("No games found for this driveway");
         }
@@ -79,6 +76,12 @@ class DrivewayManager {
     }
     static async getAlldrivewaysByUserId(userId) {
         return await model_1.drivewayModel.find({ ownerId: userId }).lean();
+    }
+    static async getAllRulesByDrivewayId(drivewayId) {
+        const driveway = await model_1.drivewayModel.findById(drivewayId);
+        if (!driveway)
+            return null;
+        return driveway.rules;
     }
 }
 exports.DrivewayManager = DrivewayManager;

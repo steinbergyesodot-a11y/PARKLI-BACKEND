@@ -22,7 +22,7 @@ class UsersManager {
         try {
             const user = await model_1.userModel.findOne({ email });
             if (!user) {
-                return { success: false, message: "User not found" };
+                return { success: false, message: "Invalid credentials" };
             }
             const isMatch = await bcrypt_1.default.compare(password, user.password || "");
             if (!isMatch) {

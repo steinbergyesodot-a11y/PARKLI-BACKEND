@@ -1,8 +1,3 @@
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-
 "use strict";
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
@@ -15,12 +10,19 @@ dotenv_1.default.config();
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    if (!token)
+    if (!token) {
         return res.status(401).json({ message: 'Access token missing' });
-    jsonwebtoken_1.default.verify(token, 'JD392JS093HDbshw29JSI38hsje02ij1QJS9', (err, decoded) => {
+    }
+    jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
         if (err) {
-            res.status(403).json({ message: 'Invalid token' });
-            return;
+            if (err.name === "TokenExpiredError") {
+                return res.status(401).json({ message: "Token expired" });
+            }
+            return res.status(403).json({ message: "Invalid token" });
+        }
+        // Validate payload shape
+        if (!decoded || typeof decoded !== "object" || !("_id" in decoded)) {
+            return res.status(403).json({ message: "Malformed token payload" });
         }
         req.user = decoded;
         next();

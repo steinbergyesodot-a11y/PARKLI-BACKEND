@@ -37,7 +37,6 @@ const stripeWebhookController = async (req, res) => {
             await model_js_2.drivewayModel.findByIdAndUpdate(drivewayId, {
                 $addToSet: { bookedDates: gameDate },
             });
-            console.log("Booking created + driveway updated");
         }
         catch (err) {
             console.error("Error creating booking:", err);
