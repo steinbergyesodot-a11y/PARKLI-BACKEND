@@ -15,4 +15,6 @@ export interface IUser {
   drivewayIds?: string[];
   googleId?: string;
   authProvider?: string;
+  failedAttempts?: Number;
+  lastFailedAttempt?: Date;
 }

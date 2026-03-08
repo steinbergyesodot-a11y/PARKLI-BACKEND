@@ -7,43 +7,95 @@ import { OAuth2Client } from "google-auth-library";
 import { userModel } from './model';
 import Stripe from 'stripe';
 import { UserType } from './interface';
+import { userSchemaZod,loginSchemaZod } from './validation';
+import { clean } from '../../utils/sanitizeHTML';
+import { logger } from '../../utils/logger/logger';
+
 
 export async function addUser(req: Request, res: Response, next: NextFunction) {
-    const { firstName, lastName, email, password, roles } = req.body;
-    if (!firstName || !lastName || !email || !password || !roles) {
-        return next(new Error("You're missing parameters"));
-    }
-    const exists = await userModel.findOne({email})
-    if(exists){
-        return next(new Error("Email already in use"))
-    }
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await UsersManager.createUser({
-            firstName,
-            lastName,
-            email,
-            userType: UserType.Guest,
-            password: hashedPassword,
-            roles
-        });
+  logger.info({
+    message: "addUser called",
+    ip: req.ip
+  });
 
-        return res.status(201).json({
-            message: "Created user successfully!"
-        });
+  try {
+    const data = userSchemaZod.parse(req.body);
 
-    } catch (error) {
-        next(error); 
+    const firstName = clean(data.firstName);
+    const lastName = clean(data.lastName);
+    const email = clean(data.email);
+
+    logger.info({
+      message: "Attempting to create user",
+      email,
+      ip: req.ip
+    });
+
+    const exists = await userModel.findOne({ email });
+    if (exists) {
+      logger.warn({
+        message: "User creation failed: email already exists",
+        email,
+        ip: req.ip
+      });
+      return next(new Error("Unable to create account"));
     }
+
+    const hashedPassword = await bcrypt.hash(data.password, 12);
+
+    await UsersManager.createUser({
+      firstName,
+      lastName,
+      email,
+      userType: UserType.Guest,
+      password: hashedPassword,
+      roles: ["renter"],
+    });
+
+    logger.info({
+      message: "User created successfully",
+      email,
+      ip: req.ip
+    });
+
+    return res.status(201).json({
+      message: "Created user successfully!",
+    });
+
+  } catch (err: any) {
+    logger.error({
+      message: "Error in addUser",
+      error: err.message,
+      stack: err.stack,
+      ip: req.ip
+    });
+    return next(err);
+  }
 }
 
 
 export async function getUserById(req: Request, res: Response, next: NextFunction) {
     const userId = req.params.userId as string;
+    logger.info({
+        message: "getUserById called",
+        userId,
+        ip: req.ip
+    });
+
     if (!userId) {
+        logger.warn({
+            message: "Missing user ID",
+            ip: req.ip
+        });
         return next(new Error("Missing user ID."));
     }
+
     if (!mongoose.Types.ObjectId.isValid(userId)) {
+        logger.warn({
+            message: "Invalid userId format",
+            userId,
+            ip: req.ip
+        });
         return next(new Error("Invalid userId format."));
     }
 
@@ -51,30 +103,69 @@ export async function getUserById(req: Request, res: Response, next: NextFunctio
         const user = await UsersManager.getUserById(userId);
 
         if (!user) {
-            throw new Error("User not found")
+            logger.warn({
+                message: "User not found",
+                userId,
+                ip: req.ip
+            });
+            throw new Error("User not found");
         }
+
+        logger.info({
+            message: "User fetched successfully",
+            userId
+        });
 
         return res.status(200).json({ user });
 
-    } catch (error) {
+    } catch (error: any) {
+        logger.error({
+            message: "Error in getUserById",
+            error: error.message,
+            stack: error.stack,
+            userId
+        });
         next(error);
     }
 }
 
 
+export async function getAllUsers(req: Request, res: Response, next: NextFunction) {
+    logger.info({
+        message: "getAllUsers called",
+        ip: req.ip
+    });
 
-export async function getAllUsers(req:Request,res:Response,next:NextFunction){
-      try{
-            const users = await UsersManager.getAllUsers()
-            if (users.length === 0) {
-                return next(new Error("Could'nt find any users"));
+    try {
+        const users = await UsersManager.getAllUsers();
 
-            }
-            res.status(200).json({"found users":users})
-         }catch(error){
-           next(error)
-         }
+        if (users.length === 0) {
+            logger.warn({
+                message: "No users found",
+                ip: req.ip
+            });
+            return next(new Error("Couldn't find any users"));
+        }
+
+        logger.info({
+            message: "Users fetched successfully",
+            count: users.length,
+            ip: req.ip
+        });
+
+        return res.status(200).json({ "found users": users });
+
+    } catch (error: any) {
+        logger.error({
+            message: "Error in getAllUsers",
+            error: error.message,
+            stack: error.stack,
+            ip: req.ip
+        });
+        next(error);
+    }
 }
+
 
 export async function deleteUserById(req:Request,res:Response){
 
@@ -171,45 +262,86 @@ export async function updateEmail(req:Request,res:Response,next:NextFunction){
 
 
 
-export async function Login(req:Request,res:Response,next:NextFunction){
-    const {email,password} = req.body
-    if (!email || !password) {
-        return next(new Error("Email and password are required"))
-    }
-    try{
-        const userFound = await UsersManager.Login(email,password)
-        if(userFound.success === false){
-            return next(new Error("Email or password invalid!"))
+export async function Login(req: Request, res: Response, next: NextFunction) {
+    const { email, password } = loginSchemaZod.parse(req.body);
+
+    // Log the incoming login attempt
+    logger.info({
+        message: "Login attempt",
+        email,
+        ip: req.ip
+    });
+
+    try {
+        const userFound = await UsersManager.Login(email, password);
+
+        if (userFound.success === false) {
+            logger.warn({
+                message: "Login failed: invalid credentials",
+                email,
+                ip: req.ip
+            });
+            return next(new Error("Email or password invalid!"));
         }
-        if (!userFound.success || !userFound.user){ 
-            return next(new Error("Email or password invalid!"))
+
+        if (!userFound.success || !userFound.user) {
+            logger.warn({
+                message: "Login failed: user object missing",
+                email,
+                ip: req.ip
+            });
+            return next(new Error("Email or password invalid!"));
         }
+
         const payload = {
-            firstName: userFound.user?.firstName,
-            lastName: userFound.user?.lastName,
-            _id : userFound.user._id,
-            roles : userFound.user.roles,
-            email: userFound.user?.email,
-            drivewayIds : userFound.user.drivewayIds,
+            firstName: userFound.user.firstName,
+            lastName: userFound.user.lastName,
+            _id: userFound.user._id,
+            roles: userFound.user.roles,
+            email: userFound.user.email,
+            drivewayIds: userFound.user.drivewayIds,
             authProvider: userFound.user.authProvider
         };
+
         if (!process.env.JWT_SECRET_KEY) {
-             throw new Error("JWT_SECRET is not defined in environment variables");
+            logger.error({
+                message: "JWT secret missing",
+                email,
+                ip: req.ip
+            });
+            throw new Error("JWT_SECRET is not defined in environment variables");
         }
-        const token = jwt.sign(
-            payload,
-            process.env.JWT_SECRET_KEY,
-            {
-            expiresIn: '1h'
-            }
-        )
-        return res.status(200).json({
-             message: 'Login successful', token ,payload
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
+            expiresIn: "1h"
         });
-    }catch(error){
-       next(error)
+
+        logger.info({
+            message: "Login successful",
+            email,
+            userId: userFound.user._id,
+            ip: req.ip
+        });
+
+        return res.status(200).json({
+            message: "Login successful",
+            token,
+            payload
+        });
+
+    } catch (error: any) {
+        logger.error({
+            message: "Error in Login endpoint",
+            error: error.message,
+            stack: error.stack,
+            email,
+            ip: req.ip
+        });
+        next(error);
     }
 }
+
+
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 export async function googleLogin(req:Request,res:Response,next:NextFunction) {
@@ -236,7 +368,8 @@ export async function googleLogin(req:Request,res:Response,next:NextFunction) {
         firstName,
         email,
         googleId,
-        roles: ["renter"], // or whatever default roles you use
+        roles: ["renter"], 
+        userType: UserType.Guest,
         drivewayIds: [],
         authProvider: "google"
       });
@@ -248,7 +381,9 @@ export async function googleLogin(req:Request,res:Response,next:NextFunction) {
       _id: user._id,
       roles: user.roles,
       email: user.email,
-      drivewayIds: user.drivewayIds
+      drivewayIds: user.drivewayIds,
+      authProvider: "google"
+
     };
 
     if (!process.env.JWT_SECRET_KEY) {
@@ -271,69 +406,6 @@ export async function googleLogin(req:Request,res:Response,next:NextFunction) {
     next(error);
   }
 }
-
-// export async function completeStripeOnboarding(req: Request, res: Response, next: NextFunction) {
-//     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-//     const userId = req.params.userId as string;
-
-//     // 1. Validate userId
-//     if (!userId) {
-//         return next(new Error("Missing user ID"));
-//     }
-
-//     try {
-//         // 2. Find user
-//         const user = await userModel.findById(userId);
-
-//         if (!user) {
-//             return next(new Error("User not found"));
-//         }
-
-//         if (!user.stripeAccountId) {
-//             return next(new Error("Stripe account not found for this user"));
-//         }
-
-//         // 3. Retrieve Stripe account
-//         const account = await stripe.accounts.retrieve(user.stripeAccountId);
-
-//         // 4. Check onboarding completion
-//         if (account.details_submitted && account.charges_enabled) {
-//             user.isStripeVerified = true;
-//             await user.save();
-//         }
-
-//         // 5. Redirect back to frontend
-//         return res.redirect("http://localhost:5173");
-
-//     } catch (error) {
-//         next(error); // Pass ALL errors to your error middleware
-//     }
-// }
-
-
-
-
-
-// controllers/stripeController.js
-
-// export const refreshStripeOnboarding = async (req:Request, res:Response, next:NextFunction) => {
-//         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-
-//   try {
-//     const userId = req.query.userId;
-//     const user = await userModel.findById(userId);
-
-//     const link = await stripe.accountLinks.create({
-//       account: user.stripeAccountId,
-//       refresh_url: `${process.env.BACKEND_URL}/api/users/stripe/onboarding/refresh?userId=${userId}`,
-//       return_url: `${process.env.BACKEND_URL}/api/users/stripe/onboarding/complete?userId=${userId}`,
-//       type: "account_onboarding"
-//     });
-//     res.redirect(link.url);
-//   } catch (err) {
-//     next(err)
-//   }
-// };
 
 
 export async function checkStripeStatus(req:Request, res:Response, next:NextFunction) {

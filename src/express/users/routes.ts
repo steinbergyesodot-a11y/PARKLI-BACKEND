@@ -4,13 +4,14 @@ import { addUser, getAllUsers, getUserById, Login,googleLogin,updateFirstName,up
 import { authenticateToken } from '../../utils/middleware/authenticateToken';
 import { authorize } from '../../utils/middleware/authorize';
 import { requireUserOwnership } from '../../utils/middleware/ownershipMiddleware';
+import { loginRateLimiter } from '../../utils/middleware/rateLimit';
 
 const usersRouter = express.Router();
 
 
 usersRouter.post("/addUser",addUser)
 
-usersRouter.get("/:userId",authenticateToken,authorize,requireUserOwnership,getUserById)
+usersRouter.get("/:userId",authenticateToken,requireUserOwnership,getUserById)
 
 usersRouter.put("/:userId/firstName/:firstName",authenticateToken,requireUserOwnership,updateFirstName)
 
@@ -20,7 +21,7 @@ usersRouter.put("/:userId/email/:email",authenticateToken,requireUserOwnership,u
 
 usersRouter.get("/",authenticateToken,authorize,getAllUsers)
 
-usersRouter.post('/login',Login)
+usersRouter.post('/login',loginRateLimiter,Login)
 
 usersRouter.post('/google-login',googleLogin)
 

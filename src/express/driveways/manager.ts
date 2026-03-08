@@ -86,7 +86,6 @@ export class DrivewayManager{
           if (!driveway) {
             throw new Error("Driveway not found");
           }
-          console.log("Driveway ID:", drivewayId); console.log("Incoming gameDate:", gameDate); console.log("Driveway.games:", driveway.games);
 
           if (!driveway.games || driveway.games.length === 0) {
             throw new Error("No games found for this driveway");

@@ -4,17 +4,19 @@ import {Router} from 'express'
 import { authenticateToken } from '../../utils/middleware/authenticateToken';
 import { authorize } from '../../utils/middleware/authorize';
 import { requireUserOwnership,requireDrivewayOwnership } from '../../utils/middleware/ownershipMiddleware';
-import { addDriveway, deleteDriveway, getAllDriveways, getDrivewayById,getAllDrivewaysByUserId, updateDrivewayById,getGamesByOwnerId, unblockGame, updateDrivewayCancleBooking,blockGame,getAllRulesByDrivewayId } from './controller';
+import { addDriveway, getAllDriveways, getDrivewayById,getAllDrivewaysByUserId, updateDrivewayById,getGamesByOwnerId, unblockGame, updateDrivewayCancleBooking,blockGame,getAllRulesByDrivewayId } from './controller';
 import { upload } from '../../utils/middleware/multerUpload';
+import { ImagesValidation } from '../../utils/middleware/imagesValidation';
 
 const drivewayRouter = express.Router();
 
 drivewayRouter.post(
     '/',
     authenticateToken,
-    upload.array('images', 10),
+    upload.array('images', 5),   // Multer FIRST
+    ImagesValidation,            // Validation AFTER Multer
     addDriveway
-)
+);
 
 drivewayRouter.get('/',getAllDriveways)
 
@@ -33,10 +35,6 @@ drivewayRouter.put('/:drivewayId/block/:gameDate',authenticateToken,requireDrive
 drivewayRouter.put('/:drivewayId/unblock/:gameDate',authenticateToken,requireDrivewayOwnership,unblockGame);
 
 drivewayRouter.put('/updateDrivewayCancleBooking/:drivewayId/:gameDate',authenticateToken,requireDrivewayOwnership,updateDrivewayCancleBooking)
-
-drivewayRouter.delete('/:deleteDrivewayById',deleteDriveway)
-
-
 
 export default drivewayRouter
 

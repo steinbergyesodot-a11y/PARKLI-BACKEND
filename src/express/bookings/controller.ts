@@ -8,6 +8,8 @@ import stripe1 from "stripe";
 import { stripe } from "../stripe";
 import { compareSync } from "bcrypt";
 import { DrivewayManager } from "../driveways/manager";
+import { bookingSchemaZod, paymentIntentSchemaZod } from "./validation";
+import { logger } from "../../utils/logger/logger";
 
 
 function convertTo24Hour(timeStr: string): string {
@@ -48,186 +50,285 @@ function buildChicagoDate(dateStr: string, timeStr: string) {
 }
 
 
+
 export async function addBooking(req: Request, res: Response, next: NextFunction) {
+  logger.info({
+    message: "addBooking called",
+    ip: req.ip,
+  });
+
+  try {
+    const data = bookingSchemaZod.parse(req.body);
+
     const {
-        ownerId,
-        drivewayId,
-        renterId,
-        address,
-        price,
+      ownerId,
+      drivewayId,
+      renterId,
+      address,
+      price,
+      gameDate,
+      paymentIntentId,
+      parkingBegins,
+      visiting_team
+    } = data;
+
+    logger.info({
+      message: "Parsed booking data",
+      drivewayId,
+      renterId,
+      ownerId,
+      gameDate,
+      parkingBegins
+    });
+
+    let normalizedTime = parkingBegins;
+    if (parkingBegins.length === 4) {
+      normalizedTime = "0" + parkingBegins;
+    }
+
+    const bookingStart = buildChicagoDate(gameDate, normalizedTime);
+
+    if (isNaN(bookingStart.getTime())) {
+      logger.warn({
+        message: "Invalid booking date/time",
         gameDate,
-        paymentIntentId,
-        parkingBegins,
-        visiting_team
-    } = req.body;
-
-    if (!ownerId || !drivewayId || !renterId || !address || !price || !gameDate || !parkingBegins || !paymentIntentId || !visiting_team) {
-        return next(new Error("You're missing parameters"));
+        normalizedTime
+      });
+      return next(new Error("Invalid date or time format. Expected YYYY-MM-DD and HH:mm."));
     }
 
-    const ids = [ownerId, drivewayId, renterId];
-    const invalidIds = ids.filter(id => !mongoose.Types.ObjectId.isValid(id));
-    if (invalidIds.length > 0) {
-        return next(new Error(`invalid ids ${invalidIds}`));
+    const cancelBy = new Date(bookingStart.getTime() - 24 * 60 * 60 * 1000);
+    const cancelByString = cancelBy.toISOString();
+
+    const booking = await BookingModel.create({
+      drivewayId,
+      ownerId,
+      renterId,
+      address,
+      price,
+      gameDate,
+      parkingTime: normalizedTime,
+      paymentIntentId,
+      cancelBy: cancelByString,
+      visiting_team,
+      isBooked: true
+    });
+
+    if (!booking) {
+      logger.warn({
+        message: "Booking failed: driveway already booked",
+        drivewayId,
+        renterId
+      });
+      return next(new Error("Sorry, this driveway was just booked by someone else."));
     }
 
-    try {
-        // Normalize time: "7:00" → "07:00"
-        let normalizedTime = parkingBegins;
-        if (parkingBegins.length === 4) {
-            normalizedTime = "0" + parkingBegins;
-        }
+    logger.info({
+      message: "Booking created successfully",
+      bookingId: booking._id,
+      drivewayId,
+      renterId,
+      ownerId
+    });
 
-        // Build booking start datetime
-        const bookingStart = buildChicagoDate(gameDate, normalizedTime);
+    return res.status(201).json({
+      message: "Created new booking",
+      booking
+    });
 
-        if (isNaN(bookingStart.getTime())) {
-            return next(new Error("Invalid date or time format. Expected YYYY-MM-DD and HH:mm."));
-        }
-
-        // Calculate cancelBy (24 hours before)
-        const cancelBy = new Date(bookingStart.getTime() - 24 * 60 * 60 * 1000);
-        const cancelByString = cancelBy.toISOString();
-
-        // -------------------------------
-        // ⭐ ATOMIC BOOKING LOGIC ⭐
-        // -------------------------------
-        const booking = await BookingModel.findOneAndUpdate(
-            {
-                drivewayId,
-                gameDate,
-                // This ensures we only book if no booking exists yet
-                isBooked: { $ne: true }
-            },
-            {
-                isBooked: true,
-                ownerId,
-                renterId,
-                address,
-                price,
-                paymentIntentId,
-                parkingTime: normalizedTime,
-                visiting_team,
-                cancelBy: cancelByString,
-                bookedAt: new Date()
-            },
-            {
-                new: true,
-                upsert: false // Do NOT create a new doc unless the filter matches
-            }
-        );
-
-        // If booking is null → someone else booked it first
-        if (!booking) {
-            return next(new Error("Sorry, this driveway was just booked by someone else."));
-        }
-
-        return res.status(201).json({
-            message: "Created new booking",
-            booking
-        });
-
-    } catch (error) {
-        next(error);
-    }
+  } catch (err: any) {
+    logger.error({
+      message: "Error in addBooking",
+      error: err.message,
+      stack: err.stack,
+      ip: req.ip
+    });
+    next(err);
+  }
 }
 
 
-export async function createPaymentIntent(req:Request, res:Response,next:NextFunction){
+export async function createPaymentIntent(req: Request, res: Response, next: NextFunction) {
 
-     const {ownerId,drivewayId,renterId,address,price,gameDate,parkingBegins,visiting_team} = req.body
-    
-        if(!ownerId || !drivewayId || !renterId || !address || !price || !gameDate ||!parkingBegins || !visiting_team){
-            return next(new Error("You're missing parameters"))
-        }
+  logger.info({
+    message: "createPaymentIntent called",
+    ip: req.ip,
+    renterId: req.body?.renterId,
+    drivewayId: req.body?.drivewayId
+  });
 
-        const ids = [ownerId, drivewayId, renterId];
-        const invalidIds = ids.filter(id => !mongoose.Types.ObjectId.isValid(id));
+  try {
+    const data = paymentIntentSchemaZod.parse(req.body);
 
-        if (invalidIds.length > 0) {
-            return next(new Error(`invalid ids ${invalidIds}`))
+    const {
+      ownerId,
+      drivewayId,
+      renterId,
+      address,
+      price,
+      gameDate,
+      parkingBegins,
+      visiting_team
+    } = data;
 
-        }
+    logger.info({
+      message: "Parsed payment intent data",
+      ownerId,
+      renterId,
+      drivewayId,
+      price
+    });
 
-        // 3. Fetch the host (ownerId)
-        const host = await userModel.findById(ownerId);
-        if (!host) {
-            return next(new Error("Host not found"))
-        }
+    const host = await userModel.findById(ownerId);
+    if (!host) {
+      logger.warn({
+        message: "Payment intent failed: host not found",
+        ownerId
+      });
+      return next(new Error("Host not found"));
+    }
 
-        // 4. Check if host has a Stripe account
-        if (!host.stripeAccountId) {
-           return next(new Error("Host has not started Stripe onboarding yet"))
-        }
+    if (!host.stripeAccountId) {
+      logger.warn({
+        message: "Payment intent failed: host missing Stripe account",
+        ownerId
+      });
+      return next(new Error("Host has not started Stripe onboarding yet"));
+    }
 
-        // 5. Check if host completed onboarding
-        if (!host.isStripeVerified) {
-            return next(new Error("Host has not completed Stripe onboarding"))
-        }
-       // 6. Fetch driveway
-        const driveway = await drivewayModel.findById(drivewayId);
+    if (!host.isStripeVerified) {
+      logger.warn({
+        message: "Payment intent failed: host not Stripe verified",
+        ownerId
+      });
+      return next(new Error("Host has not completed Stripe onboarding"));
+    }
 
-        if (!driveway) {
-            return next(new Error("driveway not found"))
-        }
+    const driveway = await drivewayModel.findById(drivewayId);
+    if (!driveway) {
+      logger.warn({
+        message: "Payment intent failed: driveway not found",
+        drivewayId
+      });
+      return next(new Error("driveway not found"));
+    }
 
-        // 7. Calculate Stripe amount (in cents)
-        const pricePerGame = driveway.price;   // e.g. 20
-        const stripeAmount = pricePerGame * 100; // e.g. 2000
-    // 8. Create PaymentIntent
-        try {
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount: stripeAmount,          // total price in cents
-            currency: "usd",
-            application_fee_amount: Math.round(stripeAmount * 0.12), // 12% platform fee (example)
-            transfer_data: {
-            destination: host.stripeAccountId, // host receives payout
-            },
-            metadata: {
-            ownerId,
-            renterId,
-            drivewayId,
-            address,
-            gameDate,
-            parkingBegins,
-            visiting_team
-            }
-        });
+    const pricePerGame = driveway.price;
+    const stripeAmount = pricePerGame * 100;
 
-        // 9. Return client_secret to frontend
-        return res.status(200).json({
-            clientSecret: paymentIntent.client_secret,
-            amount: stripeAmount
-        });
+    logger.info({
+      message: "Creating Stripe payment intent",
+      stripeAmount,
+      ownerId,
+      renterId,
+      drivewayId
+    });
 
-        } catch (error) {
-        next(error)
-        }
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: stripeAmount,
+      currency: "usd",
+      application_fee_amount: Math.round(stripeAmount * 0.12),
+      transfer_data: {
+        destination: host.stripeAccountId,
+      },
+      metadata: {
+        ownerId,
+        renterId,
+        drivewayId,
+        address,
+        gameDate,
+        parkingBegins,
+        visiting_team
+      }
+    });
+
+    logger.info({
+      message: "Stripe payment intent created",
+      paymentIntentId: paymentIntent.id,
+      amount: stripeAmount,
+      renterId,
+      drivewayId
+    });
+
+    return res.status(200).json({
+      clientSecret: paymentIntent.client_secret,
+      amount: stripeAmount
+    });
+
+  } catch (err: any) {
+    logger.error({
+      message: "Error in createPaymentIntent",
+      error: err.message,
+      stack: err.stack,
+      ip: req.ip,
+      renterId: req.body?.renterId,
+      drivewayId: req.body?.drivewayId
+    });
+    next(err);
+  }
 }
 
 export async function getBookingByRenterId(req: Request, res: Response, next: NextFunction) {
-    const renterId = req.params.renterId as string;
-    if (!renterId) {
+    const userId = req.params.userId as string;
+
+    logger.info({
+        message: "getBookingByRenterId called",
+        renterId: userId,
+        ip: req.ip
+    });
+
+    if (!userId) {
+        logger.warn({
+            message: "Missing renter ID",
+            ip: req.ip
+        });
         return next(new Error("Missing renter ID"));
     }
-    if (!mongoose.Types.ObjectId.isValid(renterId)) {
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        logger.warn({
+            message: "Invalid renterId format",
+            renterId: userId,
+            ip: req.ip
+        });
         return next(new Error("Invalid renterId format"));
     }
 
     try {
-        const bookings = await BookingManager.getBookingsByRenterId(renterId);
+        const bookings = await BookingManager.getBookingsByRenterId(userId);
+
         if (!bookings || bookings.length === 0) {
+            logger.warn({
+                message: "No bookings found for renter",
+                renterId: userId,
+                ip: req.ip
+            });
             return next(new Error("No bookings found for this renter"));
         }
+
+        logger.info({
+            message: "Bookings fetched successfully",
+            renterId: userId,
+            count: bookings.length
+        });
+
         return res.status(200).json({
             message: "Found bookings",
             bookings
         });
 
-    } catch (error) {
-        next(error); 
+    } catch (error: any) {
+        logger.error({
+            message: "Error in getBookingByRenterId",
+            error: error.message,
+            stack: error.stack,
+            renterId: userId,
+            ip: req.ip
+        });
+        next(error);
     }
 }
+
 
 export async function deleteBookingById(req: Request, res: Response, next: NextFunction) {
     const bookingId = req.params.bookingId as string;

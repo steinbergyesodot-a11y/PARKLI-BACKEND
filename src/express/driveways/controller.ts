@@ -8,99 +8,167 @@ import { IDriveway,IGame } from "./interfce";
 import { userModel } from "../users/model";
 import drivewayRouter from "./routes";
 import { stripe } from "../stripe"; // your Stripe instance
+import { drivewaySchemaZod } from "./validation";
+import { clean } from "../../utils/sanitizeHTML";
+import { logger } from "../../utils/logger/logger"; 
+
 
 
 export async function addDriveway(req: Request, res: Response, next: NextFunction) {
-    try {
-        const files = req.files as Express.Multer.File[];
-        const imageUrls: string[] = [];
-        for (const file of files) {
-            const result = await cloudinary.uploader.upload(file.path);
-            imageUrls.push(result.secure_url);
-        }
+  logger.info({
+    message: "addDriveway called",
+    ownerId: req.user?._id,
+    ip: req.ip
+  });
 
-        const { ownerId, address, name, walk, price, description } = req.body;
-        let rules;
-        try {
-            rules = JSON.parse(req.body.rules);
-        } catch {
-            return next(new Error("Invalid rules format"));
-        }
-
-        if (!ownerId || !name || !address || !walk || !price || !description) {
-            return next(new Error("You're missing parameters"));
-        }
-
-        if (!mongoose.Types.ObjectId.isValid(ownerId)) {
-            return next(new Error("Invalid ownerId format"));
-        }
-        const drivewayData: IDriveway = {
-            ownerId,
-            address,
-            name,
-            walk,
-            price,
-            rules,
-            description,
-            images: imageUrls
-        };
-        const newDriveway = await DrivewayManager.createDriveway(drivewayData);
-        const user = await userModel.findByIdAndUpdate(
-            newDriveway.ownerId,
-            {
-                $push: { drivewayIds: newDriveway._id },
-                $addToSet: { roles: "host" }
-            },
-            { new: true }
-        );
-
-        if (!user) {
-            return next(new Error("User not found"));
-        }
-        if (!user.stripeAccountId) {
-            const account = await stripe.accounts.create({
-                type: "express",
-                email: user.email
-            });
-
-            user.stripeAccountId = account.id;
-            user.isStripeVerified = false;
-            await user.save();
-        }
-        const base = process.env.BACKEND_URL?.trim();
-        if (!base) {
-            throw new Error("BACKEND_URL is not set");
-        }
-
-        const userId = user._id.toString();
-
-        const returnUrl = `http://localhost:5173/Onboard-Complete`;
-        const refreshUrl = `http://localhost:517/Onboard-Retry`;
-
-        const onboardingLink = await stripe.accountLinks.create({
-            account: user.stripeAccountId,
-            refresh_url: refreshUrl,
-            return_url: returnUrl,
-            type: "account_onboarding"
-        });
-        return res.status(201).json({
-            onboardingUrl: onboardingLink.url
-        });
-
-    } catch (error) {
-        next(error); 
+  try {
+    const ownerId = req.user?._id;
+    if (!ownerId || !mongoose.Types.ObjectId.isValid(ownerId)) {
+      logger.warn({
+        message: "Invalid ownerId format",
+        ownerId,
+        ip: req.ip
+      });
+      return next(new Error("Invalid ownerId format"));
     }
+
+    const files = (req.files as Express.Multer.File[]) || [];
+    if (files.length === 0) {
+      logger.warn({
+        message: "No images provided for driveway",
+        ownerId,
+        ip: req.ip
+      });
+      return next(new Error("At least one image is required"));
+    }
+
+    const imageUrls: string[] = [];
+    for (const file of files) {
+      try {
+        const result = await cloudinary.uploader.upload(file.path);
+        imageUrls.push(result.secure_url);
+      } catch (err: any) {
+        logger.error({
+          message: "Image upload failed",
+          error: err.message,
+          stack: err.stack,
+          ownerId
+        });
+        return next(new Error("Image upload failed"));
+      }
+    }
+
+    const data = drivewaySchemaZod.parse(req.body);
+
+    const drivewayData: IDriveway = {
+      ownerId,
+      name: clean(data.name),
+      address: clean(data.address),
+      walk: data.walk,
+      price: data.price,
+      rules: data.rules,
+      description: clean(data.description),
+      images: imageUrls
+    };
+
+    logger.info({
+      message: "Creating new driveway",
+      ownerId,
+      address: drivewayData.address
+    });
+
+    const newDriveway = await DrivewayManager.createDriveway(drivewayData);
+
+    const user = await userModel.findByIdAndUpdate(
+      ownerId,
+      {
+        $push: { drivewayIds: newDriveway._id },
+        $addToSet: { roles: "host" }
+      },
+      { new: true }
+    );
+
+    if (!user) {
+      logger.warn({
+        message: "User not found during driveway creation",
+        ownerId
+      });
+      return next(new Error("User not found"));
+    }
+
+    if (!user.stripeAccountId) {
+      logger.info({
+        message: "Creating Stripe account for host",
+        ownerId,
+        email: user.email
+      });
+
+      const account = await stripe.accounts.create({
+        type: "express",
+        email: user.email
+      });
+
+      user.stripeAccountId = account.id;
+      user.isStripeVerified = false;
+      await user.save();
+    }
+
+    const returnUrl = `http://localhost:5173/Onboard-Complete`;
+    const refreshUrl = `http://localhost:5173/Onboard-Retry`;
+
+    const onboardingLink = await stripe.accountLinks.create({
+      account: user.stripeAccountId,
+      refresh_url: refreshUrl,
+      return_url: returnUrl,
+      type: "account_onboarding"
+    });
+
+    logger.info({
+      message: "Driveway created successfully",
+      drivewayId: newDriveway._id,
+      ownerId
+    });
+
+    return res.status(201).json({
+      onboardingUrl: onboardingLink.url
+    });
+
+  } catch (error: any) {
+    logger.error({
+      message: "Error in addDriveway",
+      error: error.message,
+      stack: error.stack,
+      ownerId: req.user?._id,
+      ip: req.ip
+    });
+    next(error);
+  }
 }
-
-
 
 
 export async function getDrivewayById(req: Request, res: Response, next: NextFunction) {
     const drivewayId = req.params.drivewayId as string;
+
+    logger.info({
+        message: "getDrivewayById called",
+        drivewayId,
+        ip: req.ip
+    });
+
     if (!drivewayId) {
+        logger.warn({
+            message: "Missing driveway ID",
+            ip: req.ip
+        });
         return next(new Error("Missing driveway ID"));
     }
+
     if (!mongoose.Types.ObjectId.isValid(drivewayId)) {
+        logger.warn({
+            message: "Invalid drivewayId format",
+            drivewayId,
+            ip: req.ip
+        });
         return next(new Error("Invalid drivewayId format"));
     }
 
@@ -108,60 +176,151 @@ export async function getDrivewayById(req: Request, res: Response, next: NextFun
         const driveway = await DrivewayManager.findDrivewayById(drivewayId);
 
         if (!driveway) {
+            logger.warn({
+                message: "Driveway not found",
+                drivewayId,
+                ip: req.ip
+            });
             return next(new Error("Driveway not found"));
         }
 
+        logger.info({
+            message: "Driveway fetched successfully",
+            drivewayId
+        });
+
         return res.status(200).json({ driveway });
 
-    } catch (error) {
+    } catch (error: any) {
+        logger.error({
+            message: "Error in getDrivewayById",
+            error: error.message,
+            stack: error.stack,
+            drivewayId,
+            ip: req.ip
+        });
         next(error);
     }
 }
 
+
 export async function getAllDriveways(req: Request, res: Response, next: NextFunction) {
+    logger.info({
+        message: "getAllDriveways called",
+        ip: req.ip
+    });
+
     try {
         const driveways = await DrivewayManager.getAllDriveways();
 
         if (!driveways || driveways.length === 0) {
+            logger.warn({
+                message: "No driveways found",
+                ip: req.ip
+            });
             return next(new Error("No driveways found"));
         }
 
+        logger.info({
+            message: "Driveways fetched successfully",
+            count: driveways.length
+        });
+
         return res.status(200).json({ driveways });
 
-    } catch (error) {
-        next(error); 
+    } catch (error: any) {
+        logger.error({
+            message: "Error in getAllDriveways",
+            error: error.message,
+            stack: error.stack,
+            ip: req.ip
+        });
+        next(error);
     }
 }
 
+
 export async function getGamesByOwnerId(req: Request, res: Response, next: NextFunction) {
     const ownerId = req.params.ownerId as string;
+
+    logger.info({
+        message: "getGamesByOwnerId called",
+        ownerId,
+        ip: req.ip
+    });
+
     if (!ownerId) {
+        logger.warn({
+            message: "Missing owner ID",
+            ip: req.ip
+        });
         return next(new Error("Missing owner ID"));
     }
+
     if (!mongoose.Types.ObjectId.isValid(ownerId)) {
+        logger.warn({
+            message: "Invalid ownerId format",
+            ownerId,
+            ip: req.ip
+        });
         return next(new Error("Invalid ownerId format"));
     }
 
     try {
         const games = await DrivewayManager.getGamesByOwnerId(ownerId);
+
+        logger.info({
+            message: "Games fetched successfully",
+            ownerId,
+            count: games?.length ?? 0
+        });
+
         return res.status(200).json({
             message: "Found games",
             games
         });
 
-    } catch (error) {
-        next(error); 
+    } catch (error: any) {
+        logger.error({
+            message: "Error in getGamesByOwnerId",
+            error: error.message,
+            stack: error.stack,
+            ownerId,
+            ip: req.ip
+        });
+        next(error);
     }
 }
+
+
 
 export async function updateDrivewayById(req: Request, res: Response, next: NextFunction) {
     const gameDate = (req.params.gameDate as string)?.trim();
     const drivewayId = req.params.drivewayId as string;
 
+    logger.info({
+        message: "updateDrivewayById called",
+        drivewayId,
+        gameDate,
+        ip: req.ip
+    });
+
     if (!drivewayId || !gameDate) {
+        logger.warn({
+            message: "Missing parameters for updateDrivewayById",
+            drivewayId,
+            gameDate,
+            ip: req.ip
+        });
         return next(new Error("You're missing parameters"));
     }
+
     if (!mongoose.Types.ObjectId.isValid(drivewayId)) {
+        logger.warn({
+            message: "Invalid drivewayId format",
+            drivewayId,
+            ip: req.ip
+        });
         return next(new Error("Invalid drivewayId format"));
     }
 
@@ -169,14 +328,34 @@ export async function updateDrivewayById(req: Request, res: Response, next: Next
         const updatedDriveway = await DrivewayManager.updateDrivewayById(drivewayId, gameDate);
 
         if (!updatedDriveway) {
+            logger.warn({
+                message: "Driveway not found during update",
+                drivewayId,
+                gameDate
+            });
             return next(new Error("Driveway not found"));
         }
+
+        logger.info({
+            message: "Driveway updated successfully",
+            drivewayId,
+            gameDate
+        });
+
         return res.status(200).json({
             updatedDriveway
         });
 
-    } catch (error) {
-        next(error); 
+    } catch (error: any) {
+        logger.error({
+            message: "Error in updateDrivewayById",
+            error: error.message,
+            stack: error.stack,
+            drivewayId,
+            gameDate,
+            ip: req.ip
+        });
+        next(error);
     }
 }
 
@@ -185,40 +364,93 @@ export async function blockGame(req: Request, res: Response, next: NextFunction)
     const drivewayId = req.params.drivewayId as string;
     const gameDate = (req.params.gameDate as string)?.trim();
 
-    // 1. Validate params
+    logger.info({
+        message: "blockGame called",
+        drivewayId,
+        gameDate,
+        ip: req.ip
+    });
+
     if (!drivewayId || !gameDate) {
+        logger.warn({
+            message: "Missing parameters for blockGame",
+            drivewayId,
+            gameDate,
+            ip: req.ip
+        });
         return next(new Error("Missing parameters"));
     }
 
-    // 2. Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(drivewayId)) {
+        logger.warn({
+            message: "Invalid drivewayId format",
+            drivewayId,
+            ip: req.ip
+        });
         return next(new Error("Invalid drivewayId format"));
     }
 
     try {
-        // 3. Block game
         const updatedDriveway = await DrivewayManager.blockGame(drivewayId, gameDate);
 
         if (!updatedDriveway) {
+            logger.warn({
+                message: "Driveway not found during blockGame",
+                drivewayId,
+                gameDate
+            });
             return next(new Error("Driveway not found"));
         }
 
+        logger.info({
+            message: "Game blocked successfully",
+            drivewayId,
+            gameDate
+        });
+
         return res.status(200).json({ updatedDriveway });
 
-    } catch (error) {
+    } catch (error: any) {
+        logger.error({
+            message: "Error in blockGame",
+            error: error.message,
+            stack: error.stack,
+            drivewayId,
+            gameDate,
+            ip: req.ip
+        });
         next(error);
     }
 }
 
 
-
 export async function unblockGame(req: Request, res: Response, next: NextFunction) {
     const drivewayId = req.params.drivewayId as string;
     const gameDate = (req.params.gameDate as string)?.trim();
+
+    logger.info({
+        message: "unblockGame called",
+        drivewayId,
+        gameDate,
+        ip: req.ip
+    });
+
     if (!drivewayId || !gameDate) {
+        logger.warn({
+            message: "Missing parameters for unblockGame",
+            drivewayId,
+            gameDate,
+            ip: req.ip
+        });
         return next(new Error("Missing parameters"));
     }
+
     if (!mongoose.Types.ObjectId.isValid(drivewayId)) {
+        logger.warn({
+            message: "Invalid drivewayId format",
+            drivewayId,
+            ip: req.ip
+        });
         return next(new Error("Invalid drivewayId format"));
     }
 
@@ -226,12 +458,31 @@ export async function unblockGame(req: Request, res: Response, next: NextFunctio
         const updatedDriveway = await DrivewayManager.unblockGame(drivewayId, gameDate);
 
         if (!updatedDriveway) {
+            logger.warn({
+                message: "Driveway not found during unblockGame",
+                drivewayId,
+                gameDate
+            });
             return next(new Error("Driveway not found"));
         }
 
+        logger.info({
+            message: "Game unblocked successfully",
+            drivewayId,
+            gameDate
+        });
+
         return res.status(200).json({ updatedDriveway });
 
-    } catch (error) {
+    } catch (error: any) {
+        logger.error({
+            message: "Error in unblockGame",
+            error: error.message,
+            stack: error.stack,
+            drivewayId,
+            gameDate,
+            ip: req.ip
+        });
         next(error);
     }
 }
@@ -241,10 +492,29 @@ export async function updateDrivewayCancleBooking(req: Request, res: Response, n
     const gameDate = (req.params.gameDate as string)?.trim();
     const drivewayId = req.params.drivewayId as string;
 
+    logger.info({
+        message: "updateDrivewayCancleBooking called",
+        drivewayId,
+        gameDate,
+        ip: req.ip
+    });
+
     if (!drivewayId || !gameDate) {
+        logger.warn({
+            message: "Missing parameters for updateDrivewayCancleBooking",
+            drivewayId,
+            gameDate,
+            ip: req.ip
+        });
         return next(new Error("Missing parameters"));
     }
+
     if (!mongoose.Types.ObjectId.isValid(drivewayId)) {
+        logger.warn({
+            message: "Invalid drivewayId format",
+            drivewayId,
+            ip: req.ip
+        });
         return next(new Error("Invalid drivewayId format"));
     }
 
@@ -252,8 +522,19 @@ export async function updateDrivewayCancleBooking(req: Request, res: Response, n
         const updatedDriveway = await DrivewayManager.updateDrivewayCancelBooking(drivewayId, gameDate);
 
         if (!updatedDriveway) {
+            logger.warn({
+                message: "Driveway not found during updateDrivewayCancleBooking",
+                drivewayId,
+                gameDate
+            });
             return next(new Error("Driveway not found"));
         }
+
+        logger.info({
+            message: "Booking canceled successfully",
+            drivewayId,
+            gameDate
+        });
 
         return res.status(200).json({
             message: "Canceled booking",
@@ -261,6 +542,14 @@ export async function updateDrivewayCancleBooking(req: Request, res: Response, n
         });
 
     } catch (error: any) {
+        logger.error({
+            message: "Error in updateDrivewayCancleBooking",
+            error: error.message,
+            stack: error.stack,
+            drivewayId,
+            gameDate,
+            ip: req.ip
+        });
         next(error);
     }
 }
@@ -269,49 +558,107 @@ export async function updateDrivewayCancleBooking(req: Request, res: Response, n
 
 export async function getAllDrivewaysByUserId(req: Request, res: Response, next: NextFunction) {
     const userId = req.params.userId as string;
+
+    logger.info({
+        message: "getAllDrivewaysByUserId called",
+        userId,
+        ip: req.ip
+    });
+
     if (!userId) {
+        logger.warn({
+            message: "Missing user ID",
+            ip: req.ip
+        });
         return next(new Error("Missing user ID"));
     }
+
     if (!mongoose.Types.ObjectId.isValid(userId)) {
+        logger.warn({
+            message: "Invalid userId format",
+            userId,
+            ip: req.ip
+        });
         return next(new Error("Invalid userId format"));
     }
 
     try {
         const driveways = await DrivewayManager.getAlldrivewaysByUserId(userId);
 
+        logger.info({
+            message: "Driveways fetched successfully",
+            userId,
+            count: driveways?.length ?? 0
+        });
+
         return res.status(200).json({ driveways });
 
-    } catch (error) {
+    } catch (error: any) {
+        logger.error({
+            message: "Error in getAllDrivewaysByUserId",
+            error: error.message,
+            stack: error.stack,
+            userId,
+            ip: req.ip
+        });
         next(error);
     }
 }
 
 
-
 export async function getAllRulesByDrivewayId(req: Request, res: Response, next: NextFunction) {
     const drivewayId = req.params.drivewayId as string;
+
+    logger.info({
+        message: "getAllRulesByDrivewayId called",
+        drivewayId,
+        ip: req.ip
+    });
+
     if (!drivewayId) {
+        logger.warn({
+            message: "Missing driveway ID",
+            ip: req.ip
+        });
         return next(new Error("Missing driveway ID"));
     }
+
     if (!mongoose.Types.ObjectId.isValid(drivewayId)) {
+        logger.warn({
+            message: "Invalid drivewayId format",
+            drivewayId,
+            ip: req.ip
+        });
         return next(new Error("Invalid drivewayId format"));
     }
 
     try {
         const rules = await DrivewayManager.getAllRulesByDrivewayId(drivewayId);
+
         if (!rules) {
+            logger.warn({
+                message: "Driveway not found when fetching rules",
+                drivewayId
+            });
             return next(new Error("Driveway not found"));
         }
+
+        logger.info({
+            message: "Rules fetched successfully",
+            drivewayId,
+            count: rules.length
+        });
+
         return res.status(200).json({ rules });
 
-    } catch (error) {
+    } catch (error: any) {
+        logger.error({
+            message: "Error in getAllRulesByDrivewayId",
+            error: error.message,
+            stack: error.stack,
+            drivewayId,
+            ip: req.ip
+        });
         next(error);
     }
 }
-
-
-
-
-export function deleteDriveway(req:Request, res:Response){
-}
-

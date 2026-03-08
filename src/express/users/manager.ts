@@ -26,7 +26,7 @@ export class UsersManager{
       try{
         const user = await userModel.findOne({ email });
         if (!user) {
-          return { success: false, message: "User not found" };
+          return { success: false, message: "Invalid credentials" };
         }
         
         const isMatch = await bcrypt.compare(password, user.password || "");

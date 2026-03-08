@@ -53,7 +53,6 @@ export const stripeWebhookController = async (req: Request, res: Response) => {
         $addToSet: { bookedDates: gameDate },
       });
 
-      console.log("Booking created + driveway updated");
     } catch (err) {
       console.error("Error creating booking:", err);
       return res.status(500).send("Server error");

@@ -1,31 +1,58 @@
 import { Request, Response, NextFunction } from "express";
+import { ZodError } from "zod";
 
 function errorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
-
+    if (err instanceof ZodError) { 
+        return res.status(400).json({ 
+            status: "validation_error",
+             errors: err.issues 
+            });
+         }
     // -------------------------
     // 400 — BAD REQUEST
     // -------------------------
     const badRequestErrors = [
+        // Missing fields
         "Missing user ID",
         "Missing renter ID",
         "Missing booking ID",
         "Missing driveway ID",
         "Missing owner ID",
         "Missing parameters",
-        "missing parameters",              // ⭐ added
+        "missing parameters",
         "You're missing parameters",
         "missing user first name",
         "missing access token",
+
+        // Invalid formats
         "Invalid renterId format",
         "Invalid bookingId format",
         "Invalid userId format",
         "Invalid ownerId format",
         "Invalid drivewayId format",
         "Invalid rules format",
-        "invalid ids",
+        "Invalid ids",
+        "Invalid first name",
+        "Invalid last name",
+        "Invalid input",
+        "Invalid email format",
         "invalid date or time format",
-        "Cancellation window has passed" ,
-        "Email already in use"  // ⭐ added
+
+        // Password / roles
+        "Password must be at least 8 characters",
+        "Roles must be an array",
+
+        // Business logic
+        "Cancellation window has passed",
+        "Email already in use",
+        "Unable to create account",
+
+        // FILE VALIDATION ERRORS
+        "At least one image is required",
+        "You can upload a maximum of 5 images",
+        "Invalid file type",
+        "Invalid file extension",
+        "File too large"
     ];
 
     if (badRequestErrors.includes(err.message)) {

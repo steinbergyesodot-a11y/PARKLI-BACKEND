@@ -32,7 +32,9 @@ const BookingSchema = new mongoose.Schema<IBooking>({
     cancelBy: {type: String, required: true},
     price: { type: Number, required: true},
     visiting_team: { type: String, required: true },
-    bookedAt: { type: Date, default: Date.now }
+    bookedAt: { type: Date, default: Date.now },
+    isBooked: { type: Boolean, default: false }
+
 })
    
 BookingSchema.index({ drivewayId: 1 });
