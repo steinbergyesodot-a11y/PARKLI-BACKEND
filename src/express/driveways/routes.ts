@@ -20,7 +20,7 @@ drivewayRouter.post(
 
 drivewayRouter.get('/',getAllDriveways)
 
-drivewayRouter.get('/:drivewayId',getDrivewayById)
+drivewayRouter.get('/:drivewayId',authenticateToken,requireDrivewayOwnership,getDrivewayById)
 
 drivewayRouter.get('/getGames/:ownerId',authenticateToken,getGamesByOwnerId)
 
