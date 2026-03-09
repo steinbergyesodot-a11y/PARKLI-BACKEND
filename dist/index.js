@@ -15,6 +15,7 @@ const connect = async () => {
         console.error("❌ Mongoose runtime error:", err);
     });
     try {
+        console.log("ENV DATABASE_URI:", process.env.DATABASE_URI);
         await mongoose_1.default.connect(dbURL);
         console.log("Connected to MongoDB:", process.env.DATABASE_URI);
     }
