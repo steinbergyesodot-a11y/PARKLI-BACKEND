@@ -13,6 +13,8 @@ const connect = async () => {
 });
 
     try{
+        console.log("ENV DATABASE_URI:", process.env.DATABASE_URI);
+
         await mongoose.connect(dbURL)
         
 
