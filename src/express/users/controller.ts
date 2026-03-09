@@ -13,6 +13,8 @@ import { logger } from '../../utils/logger/logger';
 
 
 export async function addUser(req: Request, res: Response, next: NextFunction) {
+    console.log("POST using DB:", mongoose.connection.name);
+
   logger.info({
     message: "addUser called",
     ip: req.ip

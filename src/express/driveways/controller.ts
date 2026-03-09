@@ -148,6 +148,8 @@ export async function addDriveway(req: Request, res: Response, next: NextFunctio
 
 export async function getDrivewayById(req: Request, res: Response, next: NextFunction) {
     const drivewayId = req.params.drivewayId as string;
+    console.log("GET using DB:", mongoose.connection.name);
+
 
     logger.info({
         message: "getDrivewayById called",
