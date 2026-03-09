@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import connect from "..";
+import connect from '../index'
 import { appRouter } from "./router";
 import routerWeb from "./webhook/routes.stripewebhook";
 import errorHandler from "../utils/middleware/errorHandler";
