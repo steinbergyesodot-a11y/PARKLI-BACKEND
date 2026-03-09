@@ -25,6 +25,7 @@ const validation_1 = require("./validation");
 const sanitizeHTML_1 = require("../../utils/sanitizeHTML");
 const logger_1 = require("../../utils/logger/logger");
 async function addUser(req, res, next) {
+    console.log("POST using DB:", mongoose_1.default.connection.name);
     logger_1.logger.info({
         message: "addUser called",
         ip: req.ip

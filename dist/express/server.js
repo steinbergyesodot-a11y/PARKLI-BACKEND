@@ -6,12 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const __1 = __importDefault(require(".."));
+const index_1 = __importDefault(require("../index"));
 const router_1 = require("./router");
 const routes_stripewebhook_1 = __importDefault(require("./webhook/routes.stripewebhook"));
 const errorHandler_1 = __importDefault(require("../utils/middleware/errorHandler"));
 dotenv_1.default.config();
-(0, __1.default)();
+(0, index_1.default)();
 const PORT = process.env.PORT || 3000;
 const app = (0, express_1.default)();
 // 1️⃣ CORS FIRST
