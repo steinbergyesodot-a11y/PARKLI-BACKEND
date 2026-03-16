@@ -135,7 +135,6 @@ async function addDriveway(req, res, next) {
 }
 async function getDrivewayById(req, res, next) {
     const drivewayId = req.params.drivewayId;
-    console.log("GET using DB:", mongoose_1.default.connection.name);
     logger_1.logger.info({
         message: "getDrivewayById called",
         drivewayId,
