@@ -25,7 +25,7 @@ export class DrivewayManager{
 
 
     static async getAllDriveways(){
-        const driveways = await drivewayModel.find()
+        const driveways = await drivewayModel.find({ isStripeVerified: true })
         return driveways
     }
 
