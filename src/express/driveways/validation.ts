@@ -22,4 +22,24 @@ export const drivewaySchemaZod = z.object({
       return null;
     }
   }, z.array(z.string()).nonempty("rules must be an array of strings")),
-}).strict();
+}).passthrough();
+
+export const drivewayUpdateSchemaZod = z.object({
+  name: z.string().min(2).max(100).trim().optional(),
+  address: z.string().min(5).max(200).trim().optional(),
+  description: z.string().max(1000).trim().optional(),
+  walk: z.string().refine((v) => !isNaN(Number(v)) && Number(v) >= 0, {
+    message: "walk must be a numeric string",
+  }).optional(),
+  price: z.preprocess(
+    (v) => Number(v),
+    z.number().positive()
+  ).optional(),
+  rules: z.preprocess((v) => {
+    try {
+      return JSON.parse(v as string);
+    } catch {
+      return null;
+    }
+  }, z.array(z.string())).optional(),
+}).passthrough();

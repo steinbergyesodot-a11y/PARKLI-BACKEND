@@ -30,7 +30,7 @@ drivewayRouter.get('/getAllDrivewaysByUserId/:userId',authenticateToken,requireU
 
 drivewayRouter.put('/:drivewayId/:gameDate',authenticateToken,updateDrivewayById)
 
-drivewayRouter.put('/:drivewayId',updateDriveway)
+drivewayRouter.put('/editDriveway/:drivewayId',authenticateToken,updateDriveway)
 
 drivewayRouter.put('/:drivewayId/block/:gameDate',authenticateToken,requireDrivewayOwnership,blockGame)
 

@@ -8,7 +8,7 @@ import { IDriveway,IGame } from "./interfce";
 import { userModel } from "../users/model";
 import drivewayRouter from "./routes";
 import { stripe } from "../stripe"; // your Stripe instance
-import { drivewaySchemaZod } from "./validation";
+import { drivewaySchemaZod, drivewayUpdateSchemaZod } from "./validation";
 import { clean } from "../../utils/sanitizeHTML";
 import { logger } from "../../utils/logger/logger"; 
 
@@ -154,7 +154,7 @@ export async function updateDriveway(req: Request, res: Response, next: NextFunc
   });
 
   try {
-    const drivewayId = req.params.id as string;
+    const drivewayId = req.params.drivewayId as string;
     const ownerId = req.user?._id;
 
     if (!ownerId || !mongoose.Types.ObjectId.isValid(ownerId)) {
@@ -220,8 +220,7 @@ export async function updateDriveway(req: Request, res: Response, next: NextFunc
     }
 
     // Parse and validate incoming data
-    const data = drivewaySchemaZod.parse(req.body);
-
+const data = drivewayUpdateSchemaZod.parse(req.body);
     // Determine which images to keep
     let existingImages: string[] = [];
     if (req.body.existingImages) {
