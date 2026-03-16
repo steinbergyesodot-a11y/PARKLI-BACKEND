@@ -143,7 +143,7 @@ async function updateDriveway(req, res, next) {
         ip: req.ip
     });
     try {
-        const drivewayId = req.params.id;
+        const drivewayId = req.params.drivewayId;
         const ownerId = (_b = req.user) === null || _b === void 0 ? void 0 : _b._id;
         if (!ownerId || !mongoose_1.default.Types.ObjectId.isValid(ownerId)) {
             logger_1.logger.warn({
@@ -203,7 +203,7 @@ async function updateDriveway(req, res, next) {
             }
         }
         // Parse and validate incoming data
-        const data = validation_1.drivewaySchemaZod.parse(req.body);
+        const data = validation_1.drivewayUpdateSchemaZod.parse(req.body);
         // Determine which images to keep
         let existingImages = [];
         if (req.body.existingImages) {

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.drivewaySchemaZod = void 0;
+exports.drivewayUpdateSchemaZod = exports.drivewaySchemaZod = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const zod_1 = require("zod");
 exports.drivewaySchemaZod = zod_1.z.object({
@@ -25,4 +25,21 @@ exports.drivewaySchemaZod = zod_1.z.object({
             return null;
         }
     }, zod_1.z.array(zod_1.z.string()).nonempty("rules must be an array of strings")),
-}).strict();
+}).passthrough();
+exports.drivewayUpdateSchemaZod = zod_1.z.object({
+    name: zod_1.z.string().min(2).max(100).trim().optional(),
+    address: zod_1.z.string().min(5).max(200).trim().optional(),
+    description: zod_1.z.string().max(1000).trim().optional(),
+    walk: zod_1.z.string().refine((v) => !isNaN(Number(v)) && Number(v) >= 0, {
+        message: "walk must be a numeric string",
+    }).optional(),
+    price: zod_1.z.preprocess((v) => Number(v), zod_1.z.number().positive()).optional(),
+    rules: zod_1.z.preprocess((v) => {
+        try {
+            return JSON.parse(v);
+        }
+        catch {
+            return null;
+        }
+    }, zod_1.z.array(zod_1.z.string())).optional(),
+}).passthrough();

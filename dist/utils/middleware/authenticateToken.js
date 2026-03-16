@@ -22,6 +22,7 @@ function authenticateToken(req, res, next) {
         }
         // Validate payload shape
         if (!decoded || typeof decoded !== "object" || !("_id" in decoded)) {
+            console.log("Token validation failed. Decoded:", decoded); // ADD THIS LINE
             return res.status(403).json({ message: "Malformed token payload" });
         }
         req.user = decoded;
