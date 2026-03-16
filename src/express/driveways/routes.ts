@@ -4,7 +4,7 @@ import {Router} from 'express'
 import { authenticateToken } from '../../utils/middleware/authenticateToken';
 import { authorize } from '../../utils/middleware/authorize';
 import { requireUserOwnership,requireDrivewayOwnership } from '../../utils/middleware/ownershipMiddleware';
-import { addDriveway, getAllDriveways, getDrivewayById,getAllDrivewaysByUserId, updateDrivewayById,getGamesByOwnerId, unblockGame, updateDrivewayCancleBooking,blockGame,getAllRulesByDrivewayId } from './controller';
+import { addDriveway, getAllDriveways, getDrivewayById,getAllDrivewaysByUserId, updateDrivewayById,getGamesByOwnerId, unblockGame, updateDrivewayCancleBooking,blockGame,getAllRulesByDrivewayId, updateDriveway } from './controller';
 import { upload } from '../../utils/middleware/multerUpload';
 import { ImagesValidation } from '../../utils/middleware/imagesValidation';
 
@@ -28,7 +28,9 @@ drivewayRouter.get('/rules/:drivewayId',authenticateToken,getAllRulesByDrivewayI
 
 drivewayRouter.get('/getAllDrivewaysByUserId/:userId',authenticateToken,requireUserOwnership,getAllDrivewaysByUserId) 
 
-drivewayRouter.put('/:drivewayId/:gameDate',authenticateToken,updateDrivewayById)    
+drivewayRouter.put('/:drivewayId/:gameDate',authenticateToken,updateDrivewayById)
+
+drivewayRouter.put('/:drivewayId',updateDriveway)
 
 drivewayRouter.put('/:drivewayId/block/:gameDate',authenticateToken,requireDrivewayOwnership,blockGame)
 

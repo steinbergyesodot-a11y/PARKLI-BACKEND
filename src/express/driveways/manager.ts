@@ -19,6 +19,19 @@ export class DrivewayManager{
         
     } 
 
+    static async updateDriveway(drivewayId: string, driveway: Partial<IDriveway>) {
+       const games: GameInfo[] = await getCubsHomeGames();
+
+      return await drivewayModel.findByIdAndUpdate(
+      drivewayId,
+     {
+      ...driveway,
+      games: games
+     },
+    { new: true }
+  );
+}
+
     static async findDrivewayById(drivewayId : string){
         return await drivewayModel.findById(drivewayId)
     }

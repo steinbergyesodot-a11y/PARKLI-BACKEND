@@ -145,6 +145,173 @@ export async function addDriveway(req: Request, res: Response, next: NextFunctio
   }
 }
 
+export async function updateDriveway(req: Request, res: Response, next: NextFunction) {
+  logger.info({
+    message: "updateDriveway called",
+    drivewayId: req.params.id,
+    ownerId: req.user?._id,
+    ip: req.ip
+  });
+
+  try {
+    const drivewayId = req.params.id as string;
+    const ownerId = req.user?._id;
+
+    if (!ownerId || !mongoose.Types.ObjectId.isValid(ownerId)) {
+      logger.warn({
+        message: "Invalid ownerId format",
+        ownerId,
+        ip: req.ip
+      });
+      return next(new Error("Invalid ownerId format"));
+    }
+
+    if (!drivewayId || !mongoose.Types.ObjectId.isValid(drivewayId)) {
+      logger.warn({
+        message: "Invalid drivewayId format",
+        drivewayId,
+        ownerId,
+        ip: req.ip
+      });
+      return next(new Error("Invalid drivewayId format"));
+    }
+
+    // Fetch existing driveway and verify ownership
+    const existingDriveway = await DrivewayManager.findDrivewayById(drivewayId);
+    if (!existingDriveway) {
+      logger.warn({
+        message: "Driveway not found",
+        drivewayId,
+        ownerId,
+        ip: req.ip
+      });
+      return next(new Error("Driveway not found"));
+    }
+
+    if (existingDriveway.ownerId.toString() !== ownerId) {
+      logger.warn({
+        message: "Unauthorized: User does not own this driveway",
+        drivewayId,
+        ownerId,
+        drivewayOwnerId: existingDriveway.ownerId,
+        ip: req.ip
+      });
+      return next(new Error("Unauthorized: You do not own this driveway"));
+    }
+
+    // Handle new image uploads
+    const newFiles = (req.files as Express.Multer.File[]) || [];
+    const newImageUrls: string[] = [];
+
+    for (const file of newFiles) {
+      try {
+        const result = await cloudinary.uploader.upload(file.path);
+        newImageUrls.push(result.secure_url);
+      } catch (err: any) {
+        logger.error({
+          message: "New image upload failed",
+          error: err.message,
+          stack: err.stack,
+          drivewayId,
+          ownerId
+        });
+        return next(new Error("Image upload failed"));
+      }
+    }
+
+    // Parse and validate incoming data
+    const data = drivewaySchemaZod.parse(req.body);
+
+    // Determine which images to keep
+    let existingImages: string[] = [];
+    if (req.body.existingImages) {
+      try {
+        existingImages = JSON.parse(req.body.existingImages);
+      } catch {
+        logger.warn({
+          message: "Failed to parse existingImages",
+          drivewayId,
+          ownerId
+        });
+        existingImages = [];
+      }
+    }
+
+    // Combine existing and new images
+    const allImageUrls = [...existingImages, ...newImageUrls];
+
+    // Optional: Delete removed images from Cloudinary
+    const removedImages = existingDriveway.images.filter(
+      (img: string) => !existingImages.includes(img)
+    );
+
+    for (const imageUrl of removedImages) {
+      try {
+        const publicId = imageUrl.split("/").pop()?.split(".")[0];
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId);
+          logger.info({
+            message: "Removed image from Cloudinary",
+            publicId,
+            drivewayId
+          });
+        }
+      } catch (err: any) {
+        logger.warn({
+          message: "Failed to delete image from Cloudinary",
+          error: err.message,
+          drivewayId
+        });
+        // Don't fail the update if image deletion fails
+      }
+    }
+
+    const updateData: Partial<IDriveway> = {
+      name: clean(data.name),
+      address: clean(data.address),
+      walk: data.walk,
+      price: data.price,
+      rules: data.rules,
+      description: clean(data.description),
+      images: allImageUrls
+    };
+
+    logger.info({
+      message: "Updating driveway",
+      drivewayId,
+      ownerId,
+      address: updateData.address
+    });
+
+    const updatedDriveway = await DrivewayManager.updateDriveway(
+      drivewayId,
+      updateData
+    );
+
+    logger.info({
+      message: "Driveway updated successfully",
+      drivewayId,
+      ownerId
+    });
+
+    return res.status(200).json({
+      message: "Driveway updated successfully",
+      driveway: updatedDriveway
+    });
+
+  } catch (error: any) {
+    logger.error({
+      message: "Error in updateDriveway",
+      error: error.message,
+      stack: error.stack,
+      drivewayId: req.params?.id,
+      ownerId: req.user?._id,
+      ip: req.ip
+    });
+    next(error);
+  }
+}
+
 
 export async function getDrivewayById(req: Request, res: Response, next: NextFunction) {
     const drivewayId = req.params.drivewayId as string;
