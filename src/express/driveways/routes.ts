@@ -26,7 +26,7 @@ drivewayRouter.get('/getGames/:ownerId',authenticateToken,getGamesByOwnerId)
 
 drivewayRouter.get('/rules/:drivewayId',authenticateToken,getAllRulesByDrivewayId)
 
-drivewayRouter.get('/getAllDrivewaysByUserId/:userId',authenticateToken,requireDrivewayOwnership,getAllDrivewaysByUserId) 
+drivewayRouter.get('/getAllDrivewaysByUserId/:userId',authenticateToken,requireUserOwnership,getAllDrivewaysByUserId) 
 
 drivewayRouter.put('/:drivewayId/:gameDate',authenticateToken,updateDrivewayById)    
 
