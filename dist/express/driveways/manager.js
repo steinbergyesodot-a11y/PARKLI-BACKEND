@@ -11,6 +11,13 @@ class DrivewayManager {
             games: games
         });
     }
+    static async updateDriveway(drivewayId, driveway) {
+        const games = await (0, mlbAPI_1.getCubsHomeGames)();
+        return await model_1.drivewayModel.findByIdAndUpdate(drivewayId, {
+            ...driveway,
+            games: games
+        }, { new: true });
+    }
     static async findDrivewayById(drivewayId) {
         return await model_1.drivewayModel.findById(drivewayId);
     }
