@@ -148,7 +148,7 @@ export async function addDriveway(req: Request, res: Response, next: NextFunctio
 export async function updateDriveway(req: Request, res: Response, next: NextFunction) {
   logger.info({
     message: "updateDriveway called",
-    drivewayId: req.params.id,
+    drivewayId: req.params.drivewayId,
     ownerId: req.user?._id,
     ip: req.ip
   });
@@ -158,44 +158,20 @@ export async function updateDriveway(req: Request, res: Response, next: NextFunc
     const ownerId = req.user?._id;
 
     if (!ownerId || !mongoose.Types.ObjectId.isValid(ownerId)) {
-      logger.warn({
-        message: "Invalid ownerId format",
-        ownerId,
-        ip: req.ip
-      });
       return next(new Error("Invalid ownerId format"));
     }
 
     if (!drivewayId || !mongoose.Types.ObjectId.isValid(drivewayId)) {
-      logger.warn({
-        message: "Invalid drivewayId format",
-        drivewayId,
-        ownerId,
-        ip: req.ip
-      });
       return next(new Error("Invalid drivewayId format"));
     }
 
     // Fetch existing driveway and verify ownership
     const existingDriveway = await DrivewayManager.findDrivewayById(drivewayId);
     if (!existingDriveway) {
-      logger.warn({
-        message: "Driveway not found",
-        drivewayId,
-        ownerId,
-        ip: req.ip
-      });
       return next(new Error("Driveway not found"));
     }
 
     if (existingDriveway.ownerId.toString() !== ownerId) {
-      logger.warn({
-        message: "Unauthorized: User does not own this driveway",
-        drivewayId,
-        ownerId,
-        drivewayOwnerId: existingDriveway.ownerId,
-        ip: req.ip
-      });
       return next(new Error("Unauthorized: You do not own this driveway"));
     }
 
@@ -211,7 +187,6 @@ export async function updateDriveway(req: Request, res: Response, next: NextFunc
         logger.error({
           message: "New image upload failed",
           error: err.message,
-          stack: err.stack,
           drivewayId,
           ownerId
         });
@@ -219,27 +194,25 @@ export async function updateDriveway(req: Request, res: Response, next: NextFunc
       }
     }
 
-    // Parse and validate incoming data
-const data = drivewayUpdateSchemaZod.parse(req.body);
-    // Determine which images to keep
+    // Parse existing images
     let existingImages: string[] = [];
     if (req.body.existingImages) {
       try {
-        existingImages = JSON.parse(req.body.existingImages);
+        const parsed = JSON.parse(req.body.existingImages);
+        existingImages = parsed.map((img: any) => img.url || img);
       } catch {
-        logger.warn({
-          message: "Failed to parse existingImages",
-          drivewayId,
-          ownerId
-        });
         existingImages = [];
       }
     }
 
-    // Combine existing and new images
+    // Combine images
     const allImageUrls = [...existingImages, ...newImageUrls];
 
-    // Optional: Delete removed images from Cloudinary
+    if (allImageUrls.length === 0) {
+      return next(new Error("At least one image is required"));
+    }
+
+    // Delete removed images from Cloudinary
     const removedImages = existingDriveway.images.filter(
       (img: string) => !existingImages.includes(img)
     );
@@ -249,11 +222,6 @@ const data = drivewayUpdateSchemaZod.parse(req.body);
         const publicId = imageUrl.split("/").pop()?.split(".")[0];
         if (publicId) {
           await cloudinary.uploader.destroy(publicId);
-          logger.info({
-            message: "Removed image from Cloudinary",
-            publicId,
-            drivewayId
-          });
         }
       } catch (err: any) {
         logger.warn({
@@ -261,25 +229,34 @@ const data = drivewayUpdateSchemaZod.parse(req.body);
           error: err.message,
           drivewayId
         });
-        // Don't fail the update if image deletion fails
       }
     }
 
+    // Parse rules
+    let rules: string[] = [];
+    if (req.body.rules) {
+      try {
+        rules = JSON.parse(req.body.rules);
+      } catch {
+        rules = [];
+      }
+    }
+
+    // Prepare update data (skip validation - use what's provided)
     const updateData: Partial<IDriveway> = {
-      name: clean(data.name),
-      address: clean(data.address),
-      walk: data.walk,
-      price: data.price,
-      rules: data.rules,
-      description: clean(data.description),
+      name: req.body.name?.trim() || existingDriveway.name,
+      address: req.body.address?.trim() || existingDriveway.address,
+      walk: req.body.walk || existingDriveway.walk,
+      price: req.body.price || existingDriveway.price,
+      description: req.body.description?.trim() || existingDriveway.description,
+      rules: rules.length > 0 ? rules : existingDriveway.rules,
       images: allImageUrls
     };
 
     logger.info({
       message: "Updating driveway",
       drivewayId,
-      ownerId,
-      address: updateData.address
+      ownerId
     });
 
     const updatedDriveway = await DrivewayManager.updateDriveway(
@@ -303,14 +280,12 @@ const data = drivewayUpdateSchemaZod.parse(req.body);
       message: "Error in updateDriveway",
       error: error.message,
       stack: error.stack,
-      drivewayId: req.params?.id,
       ownerId: req.user?._id,
       ip: req.ip
     });
     next(error);
   }
 }
-
 
 export async function getDrivewayById(req: Request, res: Response, next: NextFunction) {
     const drivewayId = req.params.drivewayId as string;
