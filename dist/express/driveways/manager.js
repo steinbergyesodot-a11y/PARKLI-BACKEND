@@ -25,8 +25,8 @@ class DrivewayManager {
         const driveways = await model_1.drivewayModel.find({ isStripeVerified: true });
         return driveways;
     }
-    static async getGamesByOwnerId(ownerId) {
-        const driveway = await model_1.drivewayModel.findOne({ ownerId });
+    static async getGamesByDrivewayId(drivewayId) {
+        const driveway = await model_1.drivewayModel.findById(drivewayId);
         return (driveway === null || driveway === void 0 ? void 0 : driveway.games) || [];
     }
     static async updateDrivewayById(drivewayId, gameDate) {

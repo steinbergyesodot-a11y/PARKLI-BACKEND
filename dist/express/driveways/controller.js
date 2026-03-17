@@ -338,32 +338,32 @@ async function getAllDriveways(req, res, next) {
 }
 async function getGamesByOwnerId(req, res, next) {
     var _a;
-    const ownerId = req.params.ownerId;
+    const drivewayId = req.params.drivewayId;
     logger_1.logger.info({
         message: "getGamesByOwnerId called",
-        ownerId,
+        drivewayId,
         ip: req.ip
     });
-    if (!ownerId) {
+    if (!drivewayId) {
         logger_1.logger.warn({
-            message: "Missing owner ID",
+            message: "Missing driveway ID",
             ip: req.ip
         });
-        return next(new Error("Missing owner ID"));
+        return next(new Error("Missing driveway ID"));
     }
-    if (!mongoose_1.default.Types.ObjectId.isValid(ownerId)) {
+    if (!mongoose_1.default.Types.ObjectId.isValid(drivewayId)) {
         logger_1.logger.warn({
             message: "Invalid ownerId format",
-            ownerId,
+            drivewayId,
             ip: req.ip
         });
         return next(new Error("Invalid ownerId format"));
     }
     try {
-        const games = await manager_1.DrivewayManager.getGamesByOwnerId(ownerId);
+        const games = await manager_1.DrivewayManager.getGamesByDrivewayId(drivewayId);
         logger_1.logger.info({
             message: "Games fetched successfully",
-            ownerId,
+            drivewayId,
             count: (_a = games === null || games === void 0 ? void 0 : games.length) !== null && _a !== void 0 ? _a : 0
         });
         return res.status(200).json({
@@ -376,7 +376,7 @@ async function getGamesByOwnerId(req, res, next) {
             message: "Error in getGamesByOwnerId",
             error: error.message,
             stack: error.stack,
-            ownerId,
+            drivewayId,
             ip: req.ip
         });
         next(error);
