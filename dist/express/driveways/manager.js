@@ -22,7 +22,7 @@ class DrivewayManager {
         return await model_1.drivewayModel.findById(drivewayId);
     }
     static async getAllDriveways() {
-        const driveways = await model_1.drivewayModel.find({ isStripeVerified: true });
+        const driveways = await model_1.drivewayModel.find();
         return driveways;
     }
     static async getGamesByDrivewayId(drivewayId) {
