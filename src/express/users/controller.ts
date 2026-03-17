@@ -378,16 +378,15 @@ export async function googleLogin(req:Request,res:Response,next:NextFunction) {
     }
 
     // 4. Build the SAME payload as your normal login
-    const payload = {
-      name: user.firstName,
-      _id: user._id,
-      roles: user.roles,
-      email: user.email,
-      drivewayIds: user.drivewayIds,
-      authProvider: "google"
-
-    };
-
+ const payload = {
+  firstName: user.firstName,
+  lastName: user.lastName || "",  // Add this
+  _id: user._id,
+  roles: user.roles,
+  email: user.email,
+  drivewayIds: user.drivewayIds,
+  authProvider: "google"
+};
     if (!process.env.JWT_SECRET_KEY) {
       throw new Error("JWT_SECRET_KEY is not defined");
     }
