@@ -325,7 +325,8 @@ async function googleLogin(req, res, next) {
         }
         // 4. Build the SAME payload as your normal login
         const payload = {
-            name: user.firstName,
+            firstName: user.firstName,
+            lastName: user.lastName || "", // Add this
             _id: user._id,
             roles: user.roles,
             email: user.email,
