@@ -22,7 +22,7 @@ drivewayRouter.get('/',getAllDriveways)
 
 drivewayRouter.get('/:drivewayId',getDrivewayById)
 
-drivewayRouter.get('/getGames/:ownerId',authenticateToken,getGamesByOwnerId)
+drivewayRouter.get('/getGames/:drivewayId',authenticateToken,getGamesByOwnerId)
 
 drivewayRouter.get('/rules/:drivewayId',authenticateToken,getAllRulesByDrivewayId)
 

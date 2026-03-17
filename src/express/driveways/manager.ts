@@ -42,8 +42,8 @@ export class DrivewayManager{
         return driveways
     }
 
-   static async getGamesByOwnerId(ownerId:string) {
-  const driveway = await drivewayModel.findOne({ ownerId });
+   static async getGamesByDrivewayId(drivewayId:string) {
+  const driveway = await drivewayModel.findById(drivewayId);
   return driveway?.games || [];
 }
 
