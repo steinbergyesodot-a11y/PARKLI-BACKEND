@@ -15,6 +15,7 @@ import { logger } from "../../utils/logger/logger";
 
 
 export async function addDriveway(req: Request, res: Response, next: NextFunction) {
+
   logger.info({
     message: "addDriveway called",
     ownerId: req.user?._id,
@@ -64,11 +65,11 @@ const drivewayData: IDriveway = {
   ownerId,
   name: clean(data.name),
   address: clean(data.address),
-  city: clean(data.city),              // ← NEW
-  state: clean(data.state),            // ← NEW
-  latitude: data.latitude,             // ← NEW (no clean needed, it's a number)
-  longitude: data.longitude,           // ← NEW (no clean needed, it's a number)
-  publicDisplay: clean(data.publicDisplay), // ← NEW
+  city: clean(data.city),
+  state: clean(data.state),
+  zipcode: clean(data.zipcode),
+  latitude: data.latitude,
+  longitude: data.longitude,
   walk: data.walk,
   price: data.price,
   rules: data.rules,

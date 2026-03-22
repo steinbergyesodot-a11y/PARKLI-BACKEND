@@ -18,9 +18,10 @@ export interface IDriveway {
     address: string;
     city: string;                       
     state: string;                      
+    zipcode: string;                    
     latitude: number;                   
     longitude: number;                  
-    publicDisplay: string;               
+    publicDisplay?: string;              // Virtual: auto-computed from city, state, zipcode
     walk: string;
     price: number;
     images: string[];

@@ -33,7 +33,11 @@ const drivewaySchema = new mongoose.Schema<IDriveway>({
     state: {
         type: String,
         required: true
-    },  
+    },
+    zipcode: {
+        type: String,
+        required: true
+    },
     latitude: {
         type: Number,
         required: true
@@ -61,9 +65,6 @@ const drivewaySchema = new mongoose.Schema<IDriveway>({
     description: {
         type: String
     },
-    publicDisplay: {
-        type: String
-    },
     rules: {
         type: [String]
     },
@@ -76,5 +77,14 @@ const drivewaySchema = new mongoose.Schema<IDriveway>({
         default: []
     }
 });
+
+// Virtual field for publicDisplay
+drivewaySchema.virtual('publicDisplay').get(function() {
+    return `${this.city}, ${this.state} ${this.zipcode}`;
+});
+
+// Include virtuals in JSON output
+drivewaySchema.set('toJSON', { virtuals: true });
+drivewaySchema.set('toObject', { virtuals: true });
 
 export const drivewayModel = mongoose.model<IDriveway>('driveway', drivewaySchema);
