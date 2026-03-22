@@ -10,8 +10,14 @@ exports.drivewaySchemaZod = zod_1.z.object({
     ownerId: zod_1.z.string().refine((v) => mongoose_1.default.Types.ObjectId.isValid(v), {
         message: "Invalid ownerId",
     }),
-    name: zod_1.z.string().min(2).max(100).trim(),
+    name: zod_1.z.string().min(1).max(100).trim(),
     address: zod_1.z.string().min(5).max(200).trim(),
+    city: zod_1.z.string().min(1).max(100).trim(), // ← NEW
+    state: zod_1.z.string().min(1).max(100).trim(), // ← NEW
+    zipcode: zod_1.z.string().min(1).max(20).trim(), // ← NEW
+    latitude: zod_1.z.preprocess((v) => Number(v), zod_1.z.number()), // ← NEW
+    longitude: zod_1.z.preprocess((v) => Number(v), zod_1.z.number()), // ← NEW
+    publicDisplay: zod_1.z.string().min(1).max(150).trim(), // ← NEW
     description: zod_1.z.string().min(1).max(1000).trim(),
     walk: zod_1.z.string().refine((v) => !isNaN(Number(v)) && Number(v) >= 0, {
         message: "walk must be a numeric string",
@@ -29,6 +35,12 @@ exports.drivewaySchemaZod = zod_1.z.object({
 exports.drivewayUpdateSchemaZod = zod_1.z.object({
     name: zod_1.z.string().min(2).max(100).trim().optional(),
     address: zod_1.z.string().min(5).max(200).trim().optional(),
+    city: zod_1.z.string().min(1).max(100).trim().optional(), // ← NEW
+    state: zod_1.z.string().min(1).max(100).trim().optional(), // ← NEW
+    zipcode: zod_1.z.string().min(1).max(20).trim().optional(), // ← NEW
+    latitude: zod_1.z.preprocess((v) => Number(v), zod_1.z.number()).optional(), // ← NEW
+    longitude: zod_1.z.preprocess((v) => Number(v), zod_1.z.number()).optional(), // ← NEW
+    publicDisplay: zod_1.z.string().min(1).max(150).trim().optional(), // ← NEW
     description: zod_1.z.string().max(1000).trim().optional(),
     walk: zod_1.z.string().refine((v) => !isNaN(Number(v)) && Number(v) >= 0, {
         message: "walk must be a numeric string",

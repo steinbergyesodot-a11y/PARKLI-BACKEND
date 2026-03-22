@@ -53,6 +53,26 @@ const drivewaySchema = new mongoose_1.default.Schema({
         type: String,
         required: true
     },
+    city: {
+        type: String,
+        required: true
+    },
+    state: {
+        type: String,
+        required: true
+    },
+    zipcode: {
+        type: String,
+        required: true
+    },
+    latitude: {
+        type: Number,
+        required: true
+    },
+    longitude: {
+        type: Number,
+        required: true
+    },
     name: {
         type: String,
         required: true,
@@ -72,8 +92,15 @@ const drivewaySchema = new mongoose_1.default.Schema({
     description: {
         type: String
     },
+    publicDisplay: {
+        type: String
+    },
     rules: {
         type: [String]
+    },
+    isStripeVerified: {
+        type: Boolean,
+        default: false
     },
     games: {
         type: [GameSchema],

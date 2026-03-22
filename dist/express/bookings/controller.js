@@ -337,6 +337,10 @@ async function cancelBooking(req, res, next) {
         if (!updatedDriveway) {
             return next(new Error("Driveway not found"));
         }
+        return res.status(200).json({
+            message: "Booking cancelled successfully",
+            refund: refund
+        });
     }
     catch (error) {
         next(error);

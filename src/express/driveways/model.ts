@@ -26,12 +26,32 @@ const drivewaySchema = new mongoose.Schema<IDriveway>({
         type: String,
         required: true
     },
+    city: {
+        type: String,
+        required: true
+    },
+    state: {
+        type: String,
+        required: true
+    },
+    zipcode: {
+        type: String,
+        required: true
+    },
+    latitude: {
+        type: Number,
+        required: true
+    },
+    longitude: {
+        type: Number,
+        required: true
+    },
     name: {
         type: String,
-        required:true,
+        required: true,
         default: "My Driveway"
     },
-     walk: {
+    walk: {
         type: String,
         required: true
     },
@@ -45,17 +65,20 @@ const drivewaySchema = new mongoose.Schema<IDriveway>({
     description: {
         type: String
     },
+    publicDisplay: {
+        type: String
+    },
     rules: {
         type: [String]
     },
-    games:{
-      type: [GameSchema],
-      default: []
-     
+    isStripeVerified: {
+        type: Boolean,
+        default: false
+    },
+    games: {
+        type: [GameSchema],
+        default: []
     }
-  
-
-   
-})
+});
 
 export const drivewayModel = mongoose.model<IDriveway>('driveway', drivewaySchema);

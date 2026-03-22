@@ -60,16 +60,22 @@ export async function addDriveway(req: Request, res: Response, next: NextFunctio
 
     const data = drivewaySchemaZod.parse(req.body);
 
-    const drivewayData: IDriveway = {
-      ownerId,
-      name: clean(data.name),
-      address: clean(data.address),
-      walk: data.walk,
-      price: data.price,
-      rules: data.rules,
-      description: clean(data.description),
-      images: imageUrls
-    };
+const drivewayData: IDriveway = {
+  ownerId,
+  name: clean(data.name),
+  address: clean(data.address),
+  city: clean(data.city),              // ← NEW
+  state: clean(data.state),            // ← NEW
+  zipcode: clean(data.zipcode),        // ← NEW
+  latitude: data.latitude,             // ← NEW (no clean needed, it's a number)
+  longitude: data.longitude,           // ← NEW (no clean needed, it's a number)
+  publicDisplay: clean(data.publicDisplay), // ← NEW
+  walk: data.walk,
+  price: data.price,
+  rules: data.rules,
+  description: clean(data.description),
+  images: imageUrls
+};
 
     logger.info({
       message: "Creating new driveway",
