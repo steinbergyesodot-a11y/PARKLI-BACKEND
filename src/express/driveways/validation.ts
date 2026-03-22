@@ -9,7 +9,6 @@ export const drivewaySchemaZod = z.object({
   address: z.string().min(5).max(200).trim(),
   city: z.string().min(1).max(100).trim(),                          // ← NEW
   state: z.string().min(1).max(100).trim(),                         // ← NEW
-  zipcode: z.string().min(1).max(20).trim(),                        // ← NEW
   latitude: z.preprocess((v) => Number(v), z.number()),            // ← NEW
   longitude: z.preprocess((v) => Number(v), z.number()),           // ← NEW
   publicDisplay: z.string().min(1).max(150).trim(),                // ← NEW
@@ -35,7 +34,6 @@ export const drivewayUpdateSchemaZod = z.object({
   address: z.string().min(5).max(200).trim().optional(),
   city: z.string().min(1).max(100).trim().optional(),              // ← NEW
   state: z.string().min(1).max(100).trim().optional(),             // ← NEW
-  zipcode: z.string().min(1).max(20).trim().optional(),            // ← NEW
   latitude: z.preprocess((v) => Number(v), z.number()).optional(), // ← NEW
   longitude: z.preprocess((v) => Number(v), z.number()).optional(), // ← NEW
   publicDisplay: z.string().min(1).max(150).trim().optional(),     // ← NEW
