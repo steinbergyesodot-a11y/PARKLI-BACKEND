@@ -66,7 +66,6 @@ const drivewayData: IDriveway = {
   address: clean(data.address),
   city: clean(data.city),              // ← NEW
   state: clean(data.state),            // ← NEW
-  zipcode: clean(data.zipcode),        // ← NEW
   latitude: data.latitude,             // ← NEW (no clean needed, it's a number)
   longitude: data.longitude,           // ← NEW (no clean needed, it's a number)
   publicDisplay: clean(data.publicDisplay), // ← NEW

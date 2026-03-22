@@ -33,11 +33,7 @@ const drivewaySchema = new mongoose.Schema<IDriveway>({
     state: {
         type: String,
         required: true
-    },
-    zipcode: {
-        type: String,
-        required: true
-    },
+    },  
     latitude: {
         type: Number,
         required: true

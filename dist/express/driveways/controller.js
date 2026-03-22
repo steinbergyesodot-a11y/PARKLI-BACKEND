@@ -71,7 +71,6 @@ async function addDriveway(req, res, next) {
             address: (0, sanitizeHTML_1.clean)(data.address),
             city: (0, sanitizeHTML_1.clean)(data.city), // ← NEW
             state: (0, sanitizeHTML_1.clean)(data.state), // ← NEW
-            zipcode: (0, sanitizeHTML_1.clean)(data.zipcode), // ← NEW
             latitude: data.latitude, // ← NEW (no clean needed, it's a number)
             longitude: data.longitude, // ← NEW (no clean needed, it's a number)
             publicDisplay: (0, sanitizeHTML_1.clean)(data.publicDisplay), // ← NEW

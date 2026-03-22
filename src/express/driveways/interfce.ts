@@ -18,7 +18,6 @@ export interface IDriveway {
     address: string;
     city: string;                       
     state: string;                      
-    zipcode: string;                    
     latitude: number;                   
     longitude: number;                  
     publicDisplay: string;               

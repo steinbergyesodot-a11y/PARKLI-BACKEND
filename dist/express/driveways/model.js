@@ -61,10 +61,6 @@ const drivewaySchema = new mongoose_1.default.Schema({
         type: String,
         required: true
     },
-    zipcode: {
-        type: String,
-        required: true
-    },
     latitude: {
         type: Number,
         required: true
