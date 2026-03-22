@@ -12,7 +12,7 @@ export const drivewaySchemaZod = z.object({
   zipcode: z.string().min(1).max(20).trim(),
   latitude: z.preprocess((v) => Number(v), z.number()),
   longitude: z.preprocess((v) => Number(v), z.number()),
-  description: z.string().min(1).max(1000).trim().optional(),
+  description: z.string().min(0).max(1000).trim().optional(),
   walk: z.string().refine((v) => !isNaN(Number(v)) && Number(v) >= 0, {
     message: "walk must be a numeric string",
   }),
