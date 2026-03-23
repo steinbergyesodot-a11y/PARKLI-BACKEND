@@ -134,10 +134,12 @@ const drivewayData: IDriveway = {
       drivewayId: newDriveway._id,
       ownerId
     });
-
-    return res.status(201).json({
-      onboardingUrl: onboardingLink.url
-    });
+    
+return res.status(201).json({
+  onboardingUrl: onboardingLink.url,
+  drivewayId: newDriveway._id,
+  address: newDriveway.address
+});
 
   } catch (error: any) {
     logger.error({

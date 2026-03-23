@@ -125,7 +125,9 @@ async function addDriveway(req, res, next) {
             ownerId
         });
         return res.status(201).json({
-            onboardingUrl: onboardingLink.url
+            onboardingUrl: onboardingLink.url,
+            drivewayId: newDriveway._id,
+            address: newDriveway.address
         });
     }
     catch (error) {
