@@ -17,4 +17,5 @@ export interface IUser {
   authProvider?: string;
   failedAttempts?: Number;
   lastFailedAttempt?: Date;
+  lockoutUntil?: Date;
 }

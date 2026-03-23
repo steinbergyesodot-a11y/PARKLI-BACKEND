@@ -49,6 +49,7 @@ const userSchema = new mongoose_1.default.Schema({
     googleId: String,
     authProvider: { type: String, default: "local" },
     failedAttempts: { type: Number, default: 0, required: false },
-    lastFailedAttempt: { type: Date, default: null, required: false }
+    lastFailedAttempt: { type: Date, default: null, required: false },
+    lockoutUntil: { type: Date, default: null, required: false }
 });
 exports.userModel = mongoose_1.default.model('user', userSchema);

@@ -18,6 +18,7 @@ const stripe_1 = require("../stripe");
 const manager_2 = require("../driveways/manager");
 const validation_1 = require("./validation");
 const logger_1 = require("../../utils/logger/logger");
+const fraudDetection_1 = require("../../utils/fraudDetection");
 function convertTo24Hour(timeStr) {
     const date = new Date(`1970-01-01 ${timeStr}`);
     if (isNaN(date.getTime()))
@@ -64,6 +65,28 @@ async function addBooking(req, res, next) {
             gameDate,
             parkingBegins
         });
+        // SECURITY: Check for rapid bookings (fraud detection)
+        const rapidBookingCheck = await (0, fraudDetection_1.detectRapidBookings)(renterId, 10, 10);
+        if (rapidBookingCheck.isSuspicious) {
+            logger_1.logger.warn({
+                message: "Booking rejected: suspicious rapid booking pattern",
+                renterId,
+                drivewayId,
+                reason: rapidBookingCheck.reason
+            });
+            return next(new Error("Too many bookings in a short period. Please try again later."));
+        }
+        // SECURITY: Check for repeated attempts on same driveway
+        const repeatedAttemptCheck = await (0, fraudDetection_1.detectRepeatedBookingAttempts)(renterId, drivewayId, 5);
+        if (repeatedAttemptCheck.isSuspicious) {
+            logger_1.logger.warn({
+                message: "Booking rejected: repeated attempts on same driveway",
+                renterId,
+                drivewayId,
+                reason: repeatedAttemptCheck.reason
+            });
+            return next(new Error("Multiple attempts detected on this driveway. Please try another one."));
+        }
         let normalizedTime = parkingBegins;
         if (parkingBegins.length === 4) {
             normalizedTime = "0" + parkingBegins;
@@ -123,7 +146,7 @@ async function addBooking(req, res, next) {
     }
 }
 async function createPaymentIntent(req, res, next) {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e, _f, _g, _h;
     logger_1.logger.info({
         message: "createPaymentIntent called",
         ip: req.ip,
@@ -142,31 +165,47 @@ async function createPaymentIntent(req, res, next) {
         });
         const host = await model_2.userModel.findById(ownerId);
         if (!host) {
-            logger_1.logger.warn({
-                message: "Payment intent failed: host not found",
-                ownerId
+            (0, fraudDetection_1.logPaymentFailure)({
+                renterId,
+                drivewayId,
+                ownerId,
+                amount: price,
+                reason: "Host not found",
+                ip: req.ip
             });
             return next(new Error("Host not found"));
         }
         if (!host.stripeAccountId) {
-            logger_1.logger.warn({
-                message: "Payment intent failed: host missing Stripe account",
-                ownerId
+            (0, fraudDetection_1.logPaymentFailure)({
+                renterId,
+                drivewayId,
+                ownerId,
+                amount: price,
+                reason: "Host missing Stripe account",
+                ip: req.ip
             });
             return next(new Error("Host has not started Stripe onboarding yet"));
         }
         if (!host.isStripeVerified) {
-            logger_1.logger.warn({
-                message: "Payment intent failed: host not Stripe verified",
-                ownerId
+            (0, fraudDetection_1.logPaymentFailure)({
+                renterId,
+                drivewayId,
+                ownerId,
+                amount: price,
+                reason: "Host not Stripe verified",
+                ip: req.ip
             });
             return next(new Error("Host has not completed Stripe onboarding"));
         }
         const driveway = await model_3.drivewayModel.findById(drivewayId);
         if (!driveway) {
-            logger_1.logger.warn({
-                message: "Payment intent failed: driveway not found",
-                drivewayId
+            (0, fraudDetection_1.logPaymentFailure)({
+                renterId,
+                drivewayId,
+                ownerId,
+                amount: price,
+                reason: "Driveway not found",
+                ip: req.ip
             });
             return next(new Error("driveway not found"));
         }
@@ -196,6 +235,14 @@ async function createPaymentIntent(req, res, next) {
                 visiting_team
             }
         });
+        (0, fraudDetection_1.logPaymentSuccess)({
+            renterId,
+            drivewayId,
+            ownerId,
+            amount: stripeAmount,
+            paymentIntentId: paymentIntent.id,
+            ip: req.ip
+        });
         logger_1.logger.info({
             message: "Stripe payment intent created",
             paymentIntentId: paymentIntent.id,
@@ -209,13 +256,22 @@ async function createPaymentIntent(req, res, next) {
         });
     }
     catch (err) {
+        (0, fraudDetection_1.logPaymentFailure)({
+            renterId: (_c = req.body) === null || _c === void 0 ? void 0 : _c.renterId,
+            drivewayId: (_d = req.body) === null || _d === void 0 ? void 0 : _d.drivewayId,
+            ownerId: (_e = req.body) === null || _e === void 0 ? void 0 : _e.ownerId,
+            amount: ((_f = req.body) === null || _f === void 0 ? void 0 : _f.price) || 0,
+            reason: "Unexpected error in payment processing",
+            errorMessage: err.message,
+            ip: req.ip
+        });
         logger_1.logger.error({
             message: "Error in createPaymentIntent",
             error: err.message,
             stack: err.stack,
             ip: req.ip,
-            renterId: (_c = req.body) === null || _c === void 0 ? void 0 : _c.renterId,
-            drivewayId: (_d = req.body) === null || _d === void 0 ? void 0 : _d.drivewayId
+            renterId: (_g = req.body) === null || _g === void 0 ? void 0 : _g.renterId,
+            drivewayId: (_h = req.body) === null || _h === void 0 ? void 0 : _h.drivewayId
         });
         next(err);
     }

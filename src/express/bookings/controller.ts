@@ -10,6 +10,7 @@ import { compareSync } from "bcrypt";
 import { DrivewayManager } from "../driveways/manager";
 import { bookingSchemaZod, paymentIntentSchemaZod } from "./validation";
 import { logger } from "../../utils/logger/logger";
+import { detectRapidBookings, detectRepeatedBookingAttempts, logPaymentFailure, logPaymentSuccess } from "../../utils/fraudDetection";
 
 
 function convertTo24Hour(timeStr: string): string {
@@ -80,6 +81,30 @@ export async function addBooking(req: Request, res: Response, next: NextFunction
       gameDate,
       parkingBegins
     });
+
+    // SECURITY: Check for rapid bookings (fraud detection)
+    const rapidBookingCheck = await detectRapidBookings(renterId, 10, 10);
+    if (rapidBookingCheck.isSuspicious) {
+      logger.warn({
+        message: "Booking rejected: suspicious rapid booking pattern",
+        renterId,
+        drivewayId,
+        reason: rapidBookingCheck.reason
+      });
+      return next(new Error("Too many bookings in a short period. Please try again later."));
+    }
+
+    // SECURITY: Check for repeated attempts on same driveway
+    const repeatedAttemptCheck = await detectRepeatedBookingAttempts(renterId, drivewayId, 5);
+    if (repeatedAttemptCheck.isSuspicious) {
+      logger.warn({
+        message: "Booking rejected: repeated attempts on same driveway",
+        renterId,
+        drivewayId,
+        reason: repeatedAttemptCheck.reason
+      });
+      return next(new Error("Multiple attempts detected on this driveway. Please try another one."));
+    }
 
     let normalizedTime = parkingBegins;
     if (parkingBegins.length === 4) {
@@ -181,34 +206,50 @@ export async function createPaymentIntent(req: Request, res: Response, next: Nex
 
     const host = await userModel.findById(ownerId);
     if (!host) {
-      logger.warn({
-        message: "Payment intent failed: host not found",
-        ownerId
+      logPaymentFailure({
+        renterId,
+        drivewayId,
+        ownerId,
+        amount: price,
+        reason: "Host not found",
+        ip: req.ip
       });
       return next(new Error("Host not found"));
     }
 
     if (!host.stripeAccountId) {
-      logger.warn({
-        message: "Payment intent failed: host missing Stripe account",
-        ownerId
+      logPaymentFailure({
+        renterId,
+        drivewayId,
+        ownerId,
+        amount: price,
+        reason: "Host missing Stripe account",
+        ip: req.ip
       });
       return next(new Error("Host has not started Stripe onboarding yet"));
     }
 
     if (!host.isStripeVerified) {
-      logger.warn({
-        message: "Payment intent failed: host not Stripe verified",
-        ownerId
+      logPaymentFailure({
+        renterId,
+        drivewayId,
+        ownerId,
+        amount: price,
+        reason: "Host not Stripe verified",
+        ip: req.ip
       });
       return next(new Error("Host has not completed Stripe onboarding"));
     }
 
     const driveway = await drivewayModel.findById(drivewayId);
     if (!driveway) {
-      logger.warn({
-        message: "Payment intent failed: driveway not found",
-        drivewayId
+      logPaymentFailure({
+        renterId,
+        drivewayId,
+        ownerId,
+        amount: price,
+        reason: "Driveway not found",
+        ip: req.ip
       });
       return next(new Error("driveway not found"));
     }
@@ -242,6 +283,15 @@ export async function createPaymentIntent(req: Request, res: Response, next: Nex
       }
     });
 
+    logPaymentSuccess({
+      renterId,
+      drivewayId,
+      ownerId,
+      amount: stripeAmount,
+      paymentIntentId: paymentIntent.id,
+      ip: req.ip
+    });
+
     logger.info({
       message: "Stripe payment intent created",
       paymentIntentId: paymentIntent.id,
@@ -256,6 +306,16 @@ export async function createPaymentIntent(req: Request, res: Response, next: Nex
     });
 
   } catch (err: any) {
+    logPaymentFailure({
+      renterId: req.body?.renterId,
+      drivewayId: req.body?.drivewayId,
+      ownerId: req.body?.ownerId,
+      amount: req.body?.price || 0,
+      reason: "Unexpected error in payment processing",
+      errorMessage: err.message,
+      ip: req.ip
+    });
+
     logger.error({
       message: "Error in createPaymentIntent",
       error: err.message,

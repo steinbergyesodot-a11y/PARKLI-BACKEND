@@ -277,16 +277,32 @@ export async function Login(req: Request, res: Response, next: NextFunction) {
     try {
         const userFound = await UsersManager.Login(email, password);
 
-        if (userFound.success === false) {
+        if (!userFound.success) {
+            // Log detailed failed login information
             logger.warn({
-                message: "Login failed: invalid credentials",
+                message: "Login failed",
                 email,
-                ip: req.ip
+                ip: req.ip,
+                reason: userFound.message,
+                isLocked: userFound.isLocked || false,
+                failedAttempts: userFound.failedAttempts || 0,
+                accountLocked: userFound.accountLocked || false
             });
-            return next(new Error("Email or password invalid!"));
+
+            // If account is now locked, alert the user
+            if (userFound.accountLocked) {
+                logger.warn({
+                    message: "SECURITY: Account locked due to multiple failed login attempts",
+                    email,
+                    ip: req.ip,
+                    failedAttempts: userFound.failedAttempts
+                });
+            }
+
+            return next(new Error(userFound.message || "Email or password invalid!"));
         }
 
-        if (!userFound.success || !userFound.user) {
+        if (!userFound.user) {
             logger.warn({
                 message: "Login failed: user object missing",
                 email,
@@ -319,7 +335,7 @@ export async function Login(req: Request, res: Response, next: NextFunction) {
         });
 
         logger.info({
-            message: "Login successful",
+            message: "Login successful - account lockout reset",
             email,
             userId: userFound.user._id,
             ip: req.ip
