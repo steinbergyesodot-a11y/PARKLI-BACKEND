@@ -69,9 +69,9 @@ The PARKLI-BACKEND application has foundational code in place but has **signific
 ### Production Issues
 ```javascript
 // ❌ CURRENT: Secrets in .env (line in .env file)
-DATABASE_URI="mongodb+srv://yosefsteinberg:test123@cluster0.kfev7ou.mongodb.net/PARKLI"
-JWT_SECRET_KEY=JD392JS093HDbshw29JSI38hsje02ij1QJS9
-STRIPE_SECRET_KEY=sk_test_51Swk2O67tnoGJ90a3zm8ryv8r5ab7mE9ZEIYhDXqoPfK2cfT8udg9KimIaiZhjdbDHp91czYbyO56eMG3Ypmbb6400jrfM97Ed
+DATABASE_URI="mongodb+srv://user:password@cluster.mongodb.net/PARKLI"
+JWT_SECRET_KEY=your_jwt_secret_key_here
+STRIPE_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 // ❌ CURRENT: Hardcoded URLs in server.ts
 cors({
