@@ -10,6 +10,8 @@ import { UserType } from './interface';
 import { userSchemaZod,loginSchemaZod } from './validation';
 import { clean } from '../../utils/sanitizeHTML';
 import { logger } from '../../utils/logger/logger';
+import { responseWrapper,ApiResponse } from '../../utils/responseWrapper';
+import { json } from 'zod';
 
 
 export async function addUser(req: Request, res: Response, next: NextFunction) {
@@ -44,7 +46,7 @@ export async function addUser(req: Request, res: Response, next: NextFunction) {
 
     const hashedPassword = await bcrypt.hash(data.password, 12);
 
-    await UsersManager.createUser({
+    const newUser =  await UsersManager.createUser({
       firstName,
       lastName,
       email,
@@ -59,9 +61,11 @@ export async function addUser(req: Request, res: Response, next: NextFunction) {
       ip: req.ip
     });
 
-    return res.status(201).json({
-      message: "Created user successfully!",
-    });
+    return res
+       .status(201)
+       .json(
+        responseWrapper(true,{id: newUser._id, email: newUser.email}, null)
+       )
 
   } catch (err: any) {
     logger.error({
@@ -117,7 +121,11 @@ export async function getUserById(req: Request, res: Response, next: NextFunctio
             userId
         });
 
-        return res.status(200).json({ user });
+        return res
+          .status(200)
+          .json(
+            responseWrapper(true,user,null)
+           );
 
     } catch (error: any) {
         logger.error({
@@ -154,7 +162,11 @@ export async function getAllUsers(req: Request, res: Response, next: NextFunctio
             ip: req.ip
         });
 
-        return res.status(200).json({ "found users": users });
+        return res
+           .status(200)
+           .json(
+            responseWrapper(true,users,null)
+           );
 
     } catch (error: any) {
         logger.error({
@@ -191,10 +203,12 @@ export async function updateFirstName(req:Request,res:Response,next:NextFunction
             {firstName: firstName},
             {new:true}
         )
-        res.status(201).json({
-            message: "updated Name",
-            updatedUser
-        })
+        res
+        .status(201)
+        .json(
+            responseWrapper(true,updatedUser,null)
+        )
+
     }catch(error){
        next(error)
     }
@@ -221,10 +235,11 @@ export async function updateLastName(req:Request,res:Response,next:NextFunction)
             {lastName: lastName},
             {new:true}
         )
-        res.status(201).json({
-            message: "updated Name",
-            updatedUser
-        })
+        res
+        .status(201)
+        .json(
+            responseWrapper(true,updatedUser,null)
+        )
     }catch(error){
       next(error)
     }
@@ -251,10 +266,11 @@ export async function updateEmail(req:Request,res:Response,next:NextFunction){
             {email: email},
             {new:true}
         )
-        res.status(201).json({
-            message: "updated email address",
-            updatedUser
-        })
+        res
+        .status(201)
+        .json(
+            responseWrapper(true,updatedUser,null)
+        )
     }catch(error){
         next(error)
     }
@@ -340,11 +356,11 @@ export async function Login(req: Request, res: Response, next: NextFunction) {
             ip: req.ip
         });
 
-        return res.status(200).json({
-            message: "Login successful",
-            token,
-            payload
-        });
+        return res
+         .status(200)
+         .json(
+            responseWrapper(true,{token,payload})
+         )
 
     } catch (error: any) {
         logger.error({
@@ -411,12 +427,11 @@ export async function googleLogin(req:Request,res:Response,next:NextFunction) {
       expiresIn: "1h"
     });
 
-    // 6. Send it back
-    return res.status(200).json({
-      message: "Google login successful",
-      token,
-      payload
-    });
+    return res
+      .status(200)
+      .json(
+        responseWrapper(true,{token,payload})
+      )
 
   } catch (error) {
     next(error);
@@ -425,14 +440,14 @@ export async function googleLogin(req:Request,res:Response,next:NextFunction) {
 
 
 export async function checkStripeStatus(req:Request, res:Response, next:NextFunction) {
-            const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
   try {
     const userId = req.user._id;
     const user = await userModel.findById(userId);
 
     if (!user || !user.stripeAccountId) {
-      return res.json({ verified: false });
+      return res.status(200).json(responseWrapper<{verified: boolean}>(true, { verified: false }));
     }
 
     const account = await stripe.accounts.retrieve(user.stripeAccountId);
@@ -447,7 +462,7 @@ export async function checkStripeStatus(req:Request, res:Response, next:NextFunc
       await user.save();
     }
 
-    return res.json({ verified });
+    return res.status(200).json(responseWrapper<{verified: boolean, isStripeVerified?: boolean}>(true, { verified, isStripeVerified: user.isStripeVerified }));
   } catch (err) {
     next(err);
   }
