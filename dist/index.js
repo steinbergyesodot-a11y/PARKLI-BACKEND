@@ -11,12 +11,16 @@ const connect = async () => {
     if (!dbURL) {
         throw new Error('error');
     }
+    mongoose_1.default.connection.on("error", err => {
+    });
     try {
+        console.log("ENV DATABASE_URI:", process.env.DATABASE_URI);
         await mongoose_1.default.connect(dbURL);
-        console.log('connected!');
+        console.log("Connected DB:", mongoose_1.default.connection.name);
     }
     catch (error) {
-        console.log(error);
+        console.error("❌ MongoDB connection error:");
+        console.error(error);
     }
 };
 exports.default = connect;

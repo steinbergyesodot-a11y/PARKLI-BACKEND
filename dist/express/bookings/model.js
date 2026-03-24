@@ -54,8 +54,13 @@ const BookingSchema = new mongoose_1.default.Schema({
     address: { type: String, required: true },
     gameDate: { type: String, required: true },
     parkingTime: { type: String, required: true },
+    paymentIntentId: { type: String, required: true },
+    cancelBy: { type: String, required: true },
     price: { type: Number, required: true },
     visiting_team: { type: String, required: true },
-    bookedAt: { type: Date, default: Date.now }
+    bookedAt: { type: Date, default: Date.now },
+    isBooked: { type: Boolean, default: false }
 });
+BookingSchema.index({ drivewayId: 1 });
+BookingSchema.index({ renterId: 1 });
 exports.BookingModel = mongoose_1.default.model('Booking', BookingSchema);

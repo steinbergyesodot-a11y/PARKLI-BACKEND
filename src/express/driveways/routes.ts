@@ -2,42 +2,41 @@ import express from 'express'
 import multer from 'multer';
 import {Router} from 'express'
 import { authenticateToken } from '../../utils/middleware/authenticateToken';
-import { addDriveway, deleteDriveway, getAllDriveways, getDrivewayById,getAllDrivewaysByUserId, updateDrivewayById,getGamesByOwnerId, unblockGame, updateDrivewayCancleBooking,blockGame,getAllRulesByDrivewayId } from './controller';
+import { authorize } from '../../utils/middleware/authorize';
+import { requireUserOwnership,requireDrivewayOwnership } from '../../utils/middleware/ownershipMiddleware';
+import { addDriveway, getAllDriveways, getDrivewayById,getAllDrivewaysByUserId, updateDrivewayById,getGamesByOwnerId, unblockGame, updateDrivewayCancleBooking,blockGame,getAllRulesByDrivewayId, updateDriveway } from './controller';
 import { upload } from '../../utils/middleware/multerUpload';
+import { ImagesValidation } from '../../utils/middleware/imagesValidation';
 
 const drivewayRouter = express.Router();
-
-
-
 
 drivewayRouter.post(
     '/',
     authenticateToken,
-    upload.array('images', 10),
+    upload.array('images', 5),   // Multer FIRST
+    ImagesValidation,            // Validation AFTER Multer
     addDriveway
-)
-
-drivewayRouter.get('/:drivewayId',getDrivewayById)
-
-drivewayRouter.get('/getGames/:ownerId',getGamesByOwnerId)
+);
 
 drivewayRouter.get('/',getAllDriveways)
 
-drivewayRouter.get('/rules/:drivewayId',getAllRulesByDrivewayId)
+drivewayRouter.get('/:drivewayId',getDrivewayById)
 
-drivewayRouter.get('/getAllDrivewaysByUserId/:userId',getAllDrivewaysByUserId)
+drivewayRouter.get('/getGames/:drivewayId',authenticateToken,getGamesByOwnerId)
 
-drivewayRouter.put('/:drivewayId/:gameDate',updateDrivewayById)
+drivewayRouter.get('/rules/:drivewayId',authenticateToken,getAllRulesByDrivewayId)
 
-drivewayRouter.put('/:drivewayId/block/:gameDate',blockGame)
+drivewayRouter.get('/getAllDrivewaysByUserId/:userId',authenticateToken,requireUserOwnership,getAllDrivewaysByUserId) 
 
-drivewayRouter.put('/:drivewayId/unblock/:gameDate',unblockGame);
+drivewayRouter.put('/:drivewayId/:gameDate',authenticateToken,updateDrivewayById)
 
-drivewayRouter.put('/updateDrivewayCancleBooking/:drivewayId/:gameDate',updateDrivewayCancleBooking)
+drivewayRouter.put('/:drivewayId',authenticateToken,updateDriveway)
 
-drivewayRouter.delete('/:deleteDrivewayById',deleteDriveway)
+drivewayRouter.put('/:drivewayId/block/:gameDate',authenticateToken,requireDrivewayOwnership,blockGame)
 
+drivewayRouter.put('/:drivewayId/unblock/:gameDate',authenticateToken,requireDrivewayOwnership,unblockGame);
 
+drivewayRouter.put('/updateDrivewayCancleBooking/:drivewayId/:gameDate',authenticateToken,requireDrivewayOwnership,updateDrivewayCancleBooking)
 
 export default drivewayRouter
 

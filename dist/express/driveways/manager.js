@@ -5,11 +5,18 @@ const model_1 = require("./model");
 const mlbAPI_1 = require("../../utils/mlbAPI");
 class DrivewayManager {
     static async createDriveway(driveway) {
-        const games = await (0, mlbAPI_1.getRedSoxHomeGamesNextMonth)();
+        const games = await (0, mlbAPI_1.getCubsHomeGames)();
         return await model_1.drivewayModel.create({
             ...driveway,
             games: games
         });
+    }
+    static async updateDriveway(drivewayId, driveway) {
+        const games = await (0, mlbAPI_1.getCubsHomeGames)();
+        return await model_1.drivewayModel.findByIdAndUpdate(drivewayId, {
+            ...driveway,
+            games: games
+        }, { new: true });
     }
     static async findDrivewayById(drivewayId) {
         return await model_1.drivewayModel.findById(drivewayId);
@@ -18,9 +25,9 @@ class DrivewayManager {
         const driveways = await model_1.drivewayModel.find();
         return driveways;
     }
-    static async getGamesByOwnerId(ownerId) {
-        const driveway = await model_1.drivewayModel.findOne({ ownerId });
-        return driveway?.games || [];
+    static async getGamesByDrivewayId(drivewayId) {
+        const driveway = await model_1.drivewayModel.findById(drivewayId);
+        return (driveway === null || driveway === void 0 ? void 0 : driveway.games) || [];
     }
     static async updateDrivewayById(drivewayId, gameDate) {
         const normalized = gameDate.trim();
@@ -63,9 +70,6 @@ class DrivewayManager {
         if (!driveway) {
             throw new Error("Driveway not found");
         }
-        console.log("Driveway ID:", drivewayId);
-        console.log("Incoming gameDate:", gameDate);
-        console.log("Driveway.games:", driveway.games);
         if (!driveway.games || driveway.games.length === 0) {
             throw new Error("No games found for this driveway");
         }
@@ -79,6 +83,12 @@ class DrivewayManager {
     }
     static async getAlldrivewaysByUserId(userId) {
         return await model_1.drivewayModel.find({ ownerId: userId }).lean();
+    }
+    static async getAllRulesByDrivewayId(drivewayId) {
+        const driveway = await model_1.drivewayModel.findById(drivewayId);
+        if (!driveway)
+            return null;
+        return driveway.rules;
     }
 }
 exports.DrivewayManager = DrivewayManager;

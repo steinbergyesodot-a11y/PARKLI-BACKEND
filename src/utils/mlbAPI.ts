@@ -9,9 +9,9 @@ const CUBS_ID = 112;
 
 export type GameInfo = {
   date: string;
-  gameTime: string;
+  game_time: string;
   parkingBegins: string;
-  visitingTeam: string;
+  visiting_team: string;
   booked: boolean;
 };
 
@@ -32,53 +32,59 @@ function subtractOneHour(timeStr: string): string {
   });
 }
 
-export async function getRedSoxHomeGamesNextMonth() {
+export async function getCubsHomeGames() {
   const response = await mlbApi.get("/schedule", {
     params: {
       sportId: 1,
       teamId: CUBS_ID,
       startDate: "2026-04-01",
-      endDate: "2026-04-30",
+      endDate: "2026-07-30",
     },
   });
 
   const games: GameInfo[] = [];
 
-  for (const dateBlock of response.data.dates) {
-    for (const game of dateBlock.games) {
-      if (game.teams.home.team.id === CUBS_ID) {
-        const date = dateBlock.date;
-        const visitingTeam = game.teams.away.team.name;
+  for (const dateBlock of response.data.dates ?? []) {
+    for (const game of dateBlock.games ?? []) {
+      if (game.teams.home.team.id !== CUBS_ID) continue;
+      if (game.status?.detailedState !== "Scheduled") continue;
 
-        let gameTime = "TBD";
+      const date = dateBlock.date;
+      const visitingTeam = game.teams.away.team.name;
 
-        if (game.gameDate) {
-          const venueTimeZone = game.venue?.timeZone?.id || "America/Chicago";
-          const gameDate = new Date(game.gameDate);
+      let gameTime = "TBD";
+      let parkingBegins = "TBD";
 
-          if (!isNaN(gameDate.getTime())) {
-            gameTime = gameDate.toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              timeZone: "America/Chicago"
+      if (game.gameDate) {
+        const venueTimeZone = game.venue?.timeZone?.id || "America/Chicago";
+        const gameDate = new Date(game.gameDate);
 
-            });
-          }
+        if (!isNaN(gameDate.getTime())) {
+          gameTime = gameDate.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: venueTimeZone,
+          });
+
+          const parkingDate = new Date(gameDate.getTime() - 60 * 60 * 1000);
+          parkingBegins = parkingDate.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: venueTimeZone,
+          });
         }
-
-        // NEW: compute parkingBegins
-        const parkingBegins = subtractOneHour(gameTime);
-
-        games.push({
-          date,
-          gameTime,
-          parkingBegins,
-          visitingTeam: visitingTeam,
-          booked: false
-        });
       }
+
+      games.push({
+        date,
+        game_time: gameTime,
+        parkingBegins,
+        visiting_team: visitingTeam,
+        booked: false,
+      });
     }
   }
 
   return games;
 }
+

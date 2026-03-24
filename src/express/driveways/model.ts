@@ -26,12 +26,32 @@ const drivewaySchema = new mongoose.Schema<IDriveway>({
         type: String,
         required: true
     },
+    city: {
+        type: String,
+        required: true
+    },
+    state: {
+        type: String,
+        required: true
+    },
+    zipcode: {
+        type: String,
+        required: true
+    },
+    latitude: {
+        type: Number,
+        required: true
+    },
+    longitude: {
+        type: Number,
+        required: true
+    },
     name: {
         type: String,
-        required:true,
+        required: true,
         default: "My Driveway"
     },
-     walk: {
+    walk: {
         type: String,
         required: true
     },
@@ -48,14 +68,23 @@ const drivewaySchema = new mongoose.Schema<IDriveway>({
     rules: {
         type: [String]
     },
-    games:{
-      type: [GameSchema],
-      default: []
-     
+    isStripeVerified: {
+        type: Boolean,
+        default: false
+    },
+    games: {
+        type: [GameSchema],
+        default: []
     }
-  
+});
 
-   
-})
+// Virtual field for publicDisplay
+drivewaySchema.virtual('publicDisplay').get(function() {
+    return `${this.city}, ${this.state} ${this.zipcode}`;
+});
+
+// Include virtuals in JSON output
+drivewaySchema.set('toJSON', { virtuals: true });
+drivewaySchema.set('toObject', { virtuals: true });
 
 export const drivewayModel = mongoose.model<IDriveway>('driveway', drivewaySchema);
