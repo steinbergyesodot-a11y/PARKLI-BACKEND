@@ -10,6 +10,8 @@ import { UserType } from './interface';
 import { userSchemaZod,loginSchemaZod } from './validation';
 import { clean } from '../../utils/sanitizeHTML';
 import { logger } from '../../utils/logger/logger';
+import { responseWrapper,ApiResponse } from '../../utils/responseWrapper';
+import { json } from 'zod';
 
 
 export async function addUser(req: Request, res: Response, next: NextFunction) {
@@ -44,7 +46,7 @@ export async function addUser(req: Request, res: Response, next: NextFunction) {
 
     const hashedPassword = await bcrypt.hash(data.password, 12);
 
-    await UsersManager.createUser({
+    const newUser =  await UsersManager.createUser({
       firstName,
       lastName,
       email,
@@ -59,9 +61,11 @@ export async function addUser(req: Request, res: Response, next: NextFunction) {
       ip: req.ip
     });
 
-    return res.status(201).json({
-      message: "Created user successfully!",
-    });
+    return res
+       .status(201)
+       .json(
+        responseWrapper(true,{id: newUser._id, email: newUser.email}, null)
+       )
 
   } catch (err: any) {
     logger.error({
