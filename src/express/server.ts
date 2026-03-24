@@ -1,5 +1,7 @@
+import 'express-async-errors';
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import dotenv from "dotenv";
 import connect from '../index'
 import { appRouter } from "./router";
@@ -23,13 +25,16 @@ app.use(
   })
 );
 
-// 2️⃣ Stripe webhook BEFORE express.json()
+// 2️⃣ HELMET - Security headers
+app.use(helmet());
+
+// 3️⃣ Stripe webhook BEFORE express.json()
 app.use("/api/stripe", routerWeb);
 
-// 3️⃣ JSON parser AFTER webhook
+// 4️⃣ JSON parser AFTER webhook
 app.use(express.json());
 
-// 4️⃣ Your normal API routes
+// 5️⃣ Your normal API routes
 app.use(appRouter);
 
 app.use(errorHandler)

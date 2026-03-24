@@ -3,8 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+require("express-async-errors");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
+const helmet_1 = __importDefault(require("helmet"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const index_1 = __importDefault(require("../index"));
 const router_1 = require("./router");
@@ -22,11 +24,13 @@ app.use((0, cors_1.default)({
     ],
     credentials: true
 }));
-// 2️⃣ Stripe webhook BEFORE express.json()
+// 2️⃣ HELMET - Security headers
+app.use((0, helmet_1.default)());
+// 3️⃣ Stripe webhook BEFORE express.json()
 app.use("/api/stripe", routes_stripewebhook_1.default);
-// 3️⃣ JSON parser AFTER webhook
+// 4️⃣ JSON parser AFTER webhook
 app.use(express_1.default.json());
-// 4️⃣ Your normal API routes
+// 5️⃣ Your normal API routes
 app.use(router_1.appRouter);
 app.use(errorHandler_1.default);
 app.listen(PORT, () => {
