@@ -24,8 +24,8 @@ const interface_1 = require("./interface");
 const validation_1 = require("./validation");
 const sanitizeHTML_1 = require("../../utils/sanitizeHTML");
 const logger_1 = require("../../utils/logger/logger");
+const responseWrapper_1 = require("../../utils/responseWrapper");
 async function addUser(req, res, next) {
-    console.log("POST using DB:", mongoose_1.default.connection.name);
     logger_1.logger.info({
         message: "addUser called",
         ip: req.ip
@@ -50,7 +50,7 @@ async function addUser(req, res, next) {
             return next(new Error("Unable to create account"));
         }
         const hashedPassword = await bcrypt_1.default.hash(data.password, 12);
-        await manager_1.UsersManager.createUser({
+        const newUser = await manager_1.UsersManager.createUser({
             firstName,
             lastName,
             email,
@@ -63,9 +63,9 @@ async function addUser(req, res, next) {
             email,
             ip: req.ip
         });
-        return res.status(201).json({
-            message: "Created user successfully!",
-        });
+        return res
+            .status(201)
+            .json((0, responseWrapper_1.responseWrapper)(true, { id: newUser._id, email: newUser.email }, null));
     }
     catch (err) {
         logger_1.logger.error({
@@ -113,7 +113,9 @@ async function getUserById(req, res, next) {
             message: "User fetched successfully",
             userId
         });
-        return res.status(200).json({ user });
+        return res
+            .status(200)
+            .json((0, responseWrapper_1.responseWrapper)(true, user, null));
     }
     catch (error) {
         logger_1.logger.error({
@@ -144,7 +146,9 @@ async function getAllUsers(req, res, next) {
             count: users.length,
             ip: req.ip
         });
-        return res.status(200).json({ "found users": users });
+        return res
+            .status(200)
+            .json((0, responseWrapper_1.responseWrapper)(true, users, null));
     }
     catch (error) {
         logger_1.logger.error({
@@ -172,10 +176,9 @@ async function updateFirstName(req, res, next) {
     }
     try {
         const updatedUser = await model_1.userModel.findByIdAndUpdate(userId, { firstName: firstName }, { new: true });
-        res.status(201).json({
-            message: "updated Name",
-            updatedUser
-        });
+        res
+            .status(201)
+            .json((0, responseWrapper_1.responseWrapper)(true, updatedUser, null));
     }
     catch (error) {
         next(error);
@@ -195,10 +198,9 @@ async function updateLastName(req, res, next) {
     }
     try {
         const updatedUser = await model_1.userModel.findByIdAndUpdate(userId, { lastName: lastName }, { new: true });
-        res.status(201).json({
-            message: "updated Name",
-            updatedUser
-        });
+        res
+            .status(201)
+            .json((0, responseWrapper_1.responseWrapper)(true, updatedUser, null));
     }
     catch (error) {
         next(error);
@@ -218,10 +220,9 @@ async function updateEmail(req, res, next) {
     }
     try {
         const updatedUser = await model_1.userModel.findByIdAndUpdate(userId, { email: email }, { new: true });
-        res.status(201).json({
-            message: "updated email address",
-            updatedUser
-        });
+        res
+            .status(201)
+            .json((0, responseWrapper_1.responseWrapper)(true, updatedUser, null));
     }
     catch (error) {
         next(error);
@@ -293,11 +294,9 @@ async function Login(req, res, next) {
             userId: userFound.user._id,
             ip: req.ip
         });
-        return res.status(200).json({
-            message: "Login successful",
-            token,
-            payload
-        });
+        return res
+            .status(200)
+            .json((0, responseWrapper_1.responseWrapper)(true, { token, payload }));
     }
     catch (error) {
         logger_1.logger.error({
@@ -354,12 +353,9 @@ async function googleLogin(req, res, next) {
         const token = jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET_KEY, {
             expiresIn: "1h"
         });
-        // 6. Send it back
-        return res.status(200).json({
-            message: "Google login successful",
-            token,
-            payload
-        });
+        return res
+            .status(200)
+            .json((0, responseWrapper_1.responseWrapper)(true, { token, payload }));
     }
     catch (error) {
         next(error);
@@ -371,7 +367,7 @@ async function checkStripeStatus(req, res, next) {
         const userId = req.user._id;
         const user = await model_1.userModel.findById(userId);
         if (!user || !user.stripeAccountId) {
-            return res.json({ verified: false });
+            return res.status(200).json((0, responseWrapper_1.responseWrapper)(true, { verified: false }));
         }
         const account = await stripe.accounts.retrieve(user.stripeAccountId);
         const verified = account.details_submitted &&
@@ -381,7 +377,7 @@ async function checkStripeStatus(req, res, next) {
             user.isStripeVerified = true;
             await user.save();
         }
-        return res.json({ verified });
+        return res.status(200).json((0, responseWrapper_1.responseWrapper)(true, { verified, isStripeVerified: user.isStripeVerified }));
     }
     catch (err) {
         next(err);

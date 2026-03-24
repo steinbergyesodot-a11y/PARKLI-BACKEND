@@ -1,18 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const zod_1 = require("zod");
+const responseWrapper_1 = require("../responseWrapper");
 function errorHandler(err, req, res, next) {
+    // -------------------------
+    // 400 — ZOD VALIDATION ERROR
+    // -------------------------
     if (err instanceof zod_1.ZodError) {
-        return res.status(400).json({
-            status: "validation_error",
-            errors: err.issues
-        });
+        return res.status(400).json((0, responseWrapper_1.responseWrapper)(false, null, "Validation failed"));
     }
     // -------------------------
-    // 400 — BAD REQUEST
+    // 400 — BAD REQUEST ERRORS
     // -------------------------
     const badRequestErrors = [
-        // Missing fields
         "Missing user ID",
         "Missing renter ID",
         "Missing booking ID",
@@ -23,7 +23,6 @@ function errorHandler(err, req, res, next) {
         "You're missing parameters",
         "missing user first name",
         "missing access token",
-        // Invalid formats
         "Invalid renterId format",
         "Invalid bookingId format",
         "Invalid userId format",
@@ -36,14 +35,11 @@ function errorHandler(err, req, res, next) {
         "Invalid input",
         "Invalid email format",
         "invalid date or time format",
-        // Password / roles
         "Password must be at least 8 characters",
         "Roles must be an array",
-        // Business logic
         "Cancellation window has passed",
         "Email already in use",
         "Unable to create account",
-        // FILE VALIDATION ERRORS
         "At least one image is required",
         "You can upload a maximum of 5 images",
         "Invalid file type",
@@ -51,15 +47,13 @@ function errorHandler(err, req, res, next) {
         "File too large"
     ];
     if (badRequestErrors.includes(err.message)) {
-        return res.status(400).json({ error: err.message });
+        return res.status(400).json((0, responseWrapper_1.responseWrapper)(false, null, err.message));
     }
     // -------------------------
     // 401 — UNAUTHORIZED
     // -------------------------
     if (err.message === "Email or password invalid!") {
-        return res.status(401).json({
-            error: "Email or password you entered aren't correct"
-        });
+        return res.status(401).json((0, responseWrapper_1.responseWrapper)(false, null, "Email or password you entered aren't correct"));
     }
     // -------------------------
     // 404 — NOT FOUND
@@ -74,24 +68,21 @@ function errorHandler(err, req, res, next) {
         "Stripe account not found for this user"
     ];
     if (notFoundErrors.includes(err.message)) {
-        return res.status(404).json({ error: err.message });
+        return res.status(404).json((0, responseWrapper_1.responseWrapper)(false, null, err.message));
     }
     // -------------------------
-    // 400 — STRIPE ONBOARDING ERRORS
+    // 400 — STRIPE ERRORS
     // -------------------------
     const stripeErrors = [
         "Host has not started Stripe onboarding yet",
         "Host has not completed Stripe onboarding"
     ];
     if (stripeErrors.includes(err.message)) {
-        return res.status(400).json({ error: err.message });
+        return res.status(400).json((0, responseWrapper_1.responseWrapper)(false, null, err.message));
     }
     // -------------------------
     // 500 — INTERNAL SERVER ERROR
     // -------------------------
-    return res.status(500).json({
-        error: "Internal server error",
-        details: err.message
-    });
+    return res.status(500).json((0, responseWrapper_1.responseWrapper)(false, null, "Internal server error"));
 }
 exports.default = errorHandler;
