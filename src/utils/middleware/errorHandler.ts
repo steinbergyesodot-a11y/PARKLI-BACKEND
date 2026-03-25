@@ -104,6 +104,18 @@ function errorHandler(err: Error, req: Request, res: Response, next: NextFunctio
   // -------------------------
   // 500 — INTERNAL SERVER ERROR
   // -------------------------
+  const serverErrors = [
+  "Error fetching games",
+  "Error fetching driveways",
+  "Database query failed"
+];
+
+if (serverErrors.includes(err.message)) {
+  return res.status(500).json(
+    responseWrapper(false, null, err.message)
+  );
+}
+
   return res.status(500).json(
     responseWrapper(false, null, "Internal server error")
   );

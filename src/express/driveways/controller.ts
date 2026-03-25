@@ -341,7 +341,11 @@ export async function getDrivewayById(req: Request, res: Response, next: NextFun
             drivewayId
         });
 
-        return res.status(200).json({ driveway });
+        return res
+           .status(200)
+           .json(
+            responseWrapper(true,driveway,null)
+           )
 
     } catch (error: any) {
         logger.error({
@@ -378,7 +382,11 @@ export async function getAllDriveways(req: Request, res: Response, next: NextFun
             count: driveways.length
         });
 
-        return res.status(200).json({ driveways });
+        return res
+          .status(200)
+          .json(
+            responseWrapper(true,driveways)
+          )
 
     } catch (error: any) {
         logger.error({
@@ -392,7 +400,7 @@ export async function getAllDriveways(req: Request, res: Response, next: NextFun
 }
 
 
-export async function getGamesByOwnerId(req: Request, res: Response, next: NextFunction) {
+export async function getGamesByDrivewayId(req: Request, res: Response, next: NextFunction) {
     const drivewayId = req.params.drivewayId as string;
 
     logger.info({
@@ -427,10 +435,11 @@ export async function getGamesByOwnerId(req: Request, res: Response, next: NextF
             count: games?.length ?? 0
         });
 
-        return res.status(200).json({
-            message: "Found games",
-            games
-        });
+        return res
+           .status(200)
+           .json(
+            responseWrapper(true,games,null)
+           )
 
     } catch (error: any) {
         logger.error({
@@ -440,7 +449,7 @@ export async function getGamesByOwnerId(req: Request, res: Response, next: NextF
             drivewayId,
             ip: req.ip
         });
-        next(error);
+        next(new Error("Error fetching games"));
     }
 }
 
@@ -494,9 +503,11 @@ export async function updateDrivewayById(req: Request, res: Response, next: Next
             gameDate
         });
 
-        return res.status(200).json({
-            updatedDriveway
-        });
+        return res
+           .status(201)
+           .json(
+            responseWrapper(true,updateDriveway,null)
+           )
 
     } catch (error: any) {
         logger.error({
@@ -560,7 +571,11 @@ export async function blockGame(req: Request, res: Response, next: NextFunction)
             gameDate
         });
 
-        return res.status(200).json({ updatedDriveway });
+        return res
+          .status(201)
+          .json(
+            responseWrapper(true,updateDriveway)
+          )
 
     } catch (error: any) {
         logger.error({
@@ -624,7 +639,12 @@ export async function unblockGame(req: Request, res: Response, next: NextFunctio
             gameDate
         });
 
-        return res.status(200).json({ updatedDriveway });
+        
+        return res
+          .status(201)
+          .json(
+            responseWrapper(true,updateDriveway)
+          )
 
     } catch (error: any) {
         logger.error({
@@ -688,10 +708,11 @@ export async function updateDrivewayCancleBooking(req: Request, res: Response, n
             gameDate
         });
 
-        return res.status(200).json({
-            message: "Canceled booking",
-            driveway: updatedDriveway
-        });
+        return res
+          .status(201)
+          .json(
+            responseWrapper(true,updateDriveway)
+          )
 
     } catch (error: any) {
         logger.error({
@@ -743,7 +764,11 @@ export async function getAllDrivewaysByUserId(req: Request, res: Response, next:
             count: driveways?.length ?? 0
         });
 
-        return res.status(200).json({ driveways });
+        return res
+        .status(200)
+        .json(
+            responseWrapper(true,driveways,null)
+        )
 
     } catch (error: any) {
         logger.error({
@@ -800,8 +825,13 @@ export async function getAllRulesByDrivewayId(req: Request, res: Response, next:
             drivewayId,
             count: rules.length
         });
-
-        return res.status(200).json({ rules });
+        
+        
+        return res
+          .status(200)
+          .json(
+            responseWrapper(true,rules,null)
+          )
 
     } catch (error: any) {
         logger.error({
@@ -811,6 +841,7 @@ export async function getAllRulesByDrivewayId(req: Request, res: Response, next:
             drivewayId,
             ip: req.ip
         });
-        next(error);
+        return next(new Error("Error fetching driveway rules"));
+
     }
 }
