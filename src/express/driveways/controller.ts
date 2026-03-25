@@ -11,6 +11,7 @@ import { stripe } from "../stripe"; // your Stripe instance
 import { drivewaySchemaZod, drivewayUpdateSchemaZod } from "./validation";
 import { clean } from "../../utils/sanitizeHTML";
 import { logger } from "../../utils/logger/logger"; 
+import { responseWrapper } from "../../utils/responseWrapper";
 
 
 
@@ -61,21 +62,21 @@ export async function addDriveway(req: Request, res: Response, next: NextFunctio
 
     const data = drivewaySchemaZod.parse(req.body);
 
-const drivewayData: IDriveway = {
-  ownerId,
-  name: clean(data.name),
-  address: clean(data.address),
-  city: clean(data.city),
-  state: clean(data.state),
-  zipcode: clean(data.zipcode),
-  latitude: data.latitude,
-  longitude: data.longitude,
-  walk: data.walk,
-  price: data.price,
-  rules: data.rules,
-  description: clean(data.description),
-  images: imageUrls
-};
+    const drivewayData: IDriveway = {
+    ownerId,
+    name: clean(data.name),
+    address: clean(data.address),
+    city: clean(data.city),
+    state: clean(data.state),
+    zipcode: clean(data.zipcode),
+    latitude: data.latitude,
+    longitude: data.longitude,
+    walk: data.walk,
+    price: data.price,
+    rules: data.rules,
+    description: clean(data.description),
+    images: imageUrls
+    };
 
     logger.info({
       message: "Creating new driveway",
@@ -135,11 +136,13 @@ const drivewayData: IDriveway = {
       ownerId
     });
     
-return res.status(201).json({
-  onboardingUrl: onboardingLink.url,
-  drivewayId: newDriveway._id,
-  address: newDriveway.address
-});
+    return res.status(201).json(
+      responseWrapper(true, {
+        onboardingUrl: onboardingLink.url,
+        drivewayId: newDriveway._id,
+        address: newDriveway.address
+      }, null)
+    );
 
   } catch (error: any) {
     logger.error({

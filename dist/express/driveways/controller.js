@@ -22,6 +22,7 @@ const stripe_1 = require("../stripe"); // your Stripe instance
 const validation_1 = require("./validation");
 const sanitizeHTML_1 = require("../../utils/sanitizeHTML");
 const logger_1 = require("../../utils/logger/logger");
+const responseWrapper_1 = require("../../utils/responseWrapper");
 async function addDriveway(req, res, next) {
     var _a, _b, _c;
     logger_1.logger.info({
@@ -124,11 +125,11 @@ async function addDriveway(req, res, next) {
             drivewayId: newDriveway._id,
             ownerId
         });
-        return res.status(201).json({
+        return res.status(201).json((0, responseWrapper_1.responseWrapper)(true, {
             onboardingUrl: onboardingLink.url,
             drivewayId: newDriveway._id,
             address: newDriveway.address
-        });
+        }, null));
     }
     catch (error) {
         logger_1.logger.error({
