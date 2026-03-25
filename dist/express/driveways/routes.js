@@ -15,7 +15,7 @@ imagesValidation_1.ImagesValidation, // Validation AFTER Multer
 controller_1.addDriveway);
 drivewayRouter.get('/', controller_1.getAllDriveways);
 drivewayRouter.get('/:drivewayId', controller_1.getDrivewayById);
-drivewayRouter.get('/getGames/:drivewayId', authenticateToken_1.authenticateToken, controller_1.getGamesByOwnerId);
+drivewayRouter.get('/getGames/:drivewayId', authenticateToken_1.authenticateToken, controller_1.getGamesByDrivewayId);
 drivewayRouter.get('/rules/:drivewayId', authenticateToken_1.authenticateToken, controller_1.getAllRulesByDrivewayId);
 drivewayRouter.get('/getAllDrivewaysByUserId/:userId', authenticateToken_1.authenticateToken, ownershipMiddleware_1.requireUserOwnership, controller_1.getAllDrivewaysByUserId);
 drivewayRouter.put('/:drivewayId/:gameDate', authenticateToken_1.authenticateToken, controller_1.updateDrivewayById);

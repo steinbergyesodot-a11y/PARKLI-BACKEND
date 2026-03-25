@@ -7,7 +7,7 @@ exports.addDriveway = addDriveway;
 exports.updateDriveway = updateDriveway;
 exports.getDrivewayById = getDrivewayById;
 exports.getAllDriveways = getAllDriveways;
-exports.getGamesByOwnerId = getGamesByOwnerId;
+exports.getGamesByDrivewayId = getGamesByDrivewayId;
 exports.updateDrivewayById = updateDrivewayById;
 exports.blockGame = blockGame;
 exports.unblockGame = unblockGame;
@@ -301,7 +301,9 @@ async function getDrivewayById(req, res, next) {
             message: "Driveway fetched successfully",
             drivewayId
         });
-        return res.status(200).json({ driveway });
+        return res
+            .status(200)
+            .json((0, responseWrapper_1.responseWrapper)(true, driveway, null));
     }
     catch (error) {
         logger_1.logger.error({
@@ -332,7 +334,9 @@ async function getAllDriveways(req, res, next) {
             message: "Driveways fetched successfully",
             count: driveways.length
         });
-        return res.status(200).json({ driveways });
+        return res
+            .status(200)
+            .json((0, responseWrapper_1.responseWrapper)(true, driveways));
     }
     catch (error) {
         logger_1.logger.error({
@@ -344,7 +348,7 @@ async function getAllDriveways(req, res, next) {
         next(error);
     }
 }
-async function getGamesByOwnerId(req, res, next) {
+async function getGamesByDrivewayId(req, res, next) {
     var _a;
     const drivewayId = req.params.drivewayId;
     logger_1.logger.info({
@@ -374,10 +378,9 @@ async function getGamesByOwnerId(req, res, next) {
             drivewayId,
             count: (_a = games === null || games === void 0 ? void 0 : games.length) !== null && _a !== void 0 ? _a : 0
         });
-        return res.status(200).json({
-            message: "Found games",
-            games
-        });
+        return res
+            .status(200)
+            .json((0, responseWrapper_1.responseWrapper)(true, games, null));
     }
     catch (error) {
         logger_1.logger.error({
@@ -387,7 +390,7 @@ async function getGamesByOwnerId(req, res, next) {
             drivewayId,
             ip: req.ip
         });
-        next(error);
+        next(new Error("Error fetching games"));
     }
 }
 async function updateDrivewayById(req, res, next) {
@@ -432,9 +435,9 @@ async function updateDrivewayById(req, res, next) {
             drivewayId,
             gameDate
         });
-        return res.status(200).json({
-            updatedDriveway
-        });
+        return res
+            .status(201)
+            .json((0, responseWrapper_1.responseWrapper)(true, updateDriveway, null));
     }
     catch (error) {
         logger_1.logger.error({
@@ -490,7 +493,9 @@ async function blockGame(req, res, next) {
             drivewayId,
             gameDate
         });
-        return res.status(200).json({ updatedDriveway });
+        return res
+            .status(201)
+            .json((0, responseWrapper_1.responseWrapper)(true, updateDriveway));
     }
     catch (error) {
         logger_1.logger.error({
@@ -546,7 +551,9 @@ async function unblockGame(req, res, next) {
             drivewayId,
             gameDate
         });
-        return res.status(200).json({ updatedDriveway });
+        return res
+            .status(201)
+            .json((0, responseWrapper_1.responseWrapper)(true, updateDriveway));
     }
     catch (error) {
         logger_1.logger.error({
@@ -602,10 +609,9 @@ async function updateDrivewayCancleBooking(req, res, next) {
             drivewayId,
             gameDate
         });
-        return res.status(200).json({
-            message: "Canceled booking",
-            driveway: updatedDriveway
-        });
+        return res
+            .status(201)
+            .json((0, responseWrapper_1.responseWrapper)(true, updateDriveway));
     }
     catch (error) {
         logger_1.logger.error({
@@ -649,7 +655,9 @@ async function getAllDrivewaysByUserId(req, res, next) {
             userId,
             count: (_a = driveways === null || driveways === void 0 ? void 0 : driveways.length) !== null && _a !== void 0 ? _a : 0
         });
-        return res.status(200).json({ driveways });
+        return res
+            .status(200)
+            .json((0, responseWrapper_1.responseWrapper)(true, driveways, null));
     }
     catch (error) {
         logger_1.logger.error({
@@ -698,7 +706,9 @@ async function getAllRulesByDrivewayId(req, res, next) {
             drivewayId,
             count: rules.length
         });
-        return res.status(200).json({ rules });
+        return res
+            .status(200)
+            .json((0, responseWrapper_1.responseWrapper)(true, rules, null));
     }
     catch (error) {
         logger_1.logger.error({
@@ -708,6 +718,6 @@ async function getAllRulesByDrivewayId(req, res, next) {
             drivewayId,
             ip: req.ip
         });
-        next(error);
+        return next(new Error("Error fetching driveway rules"));
     }
 }
