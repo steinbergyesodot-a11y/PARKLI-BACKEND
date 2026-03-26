@@ -11,6 +11,7 @@ import { DrivewayManager } from "../driveways/manager";
 import { bookingSchemaZod, paymentIntentSchemaZod } from "./validation";
 import { logger } from "../../utils/logger/logger";
 import { detectRapidBookings, detectRepeatedBookingAttempts, logPaymentFailure, logPaymentSuccess } from "../../utils/fraudDetection";
+import { responseWrapper } from "../../utils/responseWrapper";
 
 
 function convertTo24Hour(timeStr: string): string {
@@ -156,10 +157,11 @@ export async function addBooking(req: Request, res: Response, next: NextFunction
       ownerId
     });
 
-    return res.status(201).json({
-      message: "Created new booking",
-      booking
-    });
+    return res
+       .status(200)
+       .json(
+         responseWrapper(true,booking,null)
+       )
 
   } catch (err: any) {
     logger.error({
@@ -328,7 +330,7 @@ export async function createPaymentIntent(req: Request, res: Response, next: Nex
   }
 }
 
-export async function getBookingByRenterId(req: Request, res: Response, next: NextFunction) {
+export async function getBookingsByRenterId(req: Request, res: Response, next: NextFunction) {
     const userId = req.params.userId as string;
 
     logger.info({
@@ -372,10 +374,11 @@ export async function getBookingByRenterId(req: Request, res: Response, next: Ne
             count: bookings.length
         });
 
-        return res.status(200).json({
-            message: "Found bookings",
-            bookings
-        });
+        return res
+           .status(200)
+           .json(
+            responseWrapper(true,bookings,null)
+          )
 
     } catch (error: any) {
         logger.error({

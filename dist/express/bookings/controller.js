@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.addBooking = addBooking;
 exports.createPaymentIntent = createPaymentIntent;
-exports.getBookingByRenterId = getBookingByRenterId;
+exports.getBookingsByRenterId = getBookingsByRenterId;
 exports.deleteBookingById = deleteBookingById;
 exports.checkIfUserHasBooking = checkIfUserHasBooking;
 exports.cancelBooking = cancelBooking;
@@ -19,6 +19,7 @@ const manager_2 = require("../driveways/manager");
 const validation_1 = require("./validation");
 const logger_1 = require("../../utils/logger/logger");
 const fraudDetection_1 = require("../../utils/fraudDetection");
+const responseWrapper_1 = require("../../utils/responseWrapper");
 function convertTo24Hour(timeStr) {
     const date = new Date(`1970-01-01 ${timeStr}`);
     if (isNaN(date.getTime()))
@@ -130,10 +131,9 @@ async function addBooking(req, res, next) {
             renterId,
             ownerId
         });
-        return res.status(201).json({
-            message: "Created new booking",
-            booking
-        });
+        return res
+            .status(200)
+            .json((0, responseWrapper_1.responseWrapper)(true, booking, null));
     }
     catch (err) {
         logger_1.logger.error({
@@ -276,7 +276,7 @@ async function createPaymentIntent(req, res, next) {
         next(err);
     }
 }
-async function getBookingByRenterId(req, res, next) {
+async function getBookingsByRenterId(req, res, next) {
     const userId = req.params.userId;
     logger_1.logger.info({
         message: "getBookingByRenterId called",
@@ -313,10 +313,9 @@ async function getBookingByRenterId(req, res, next) {
             renterId: userId,
             count: bookings.length
         });
-        return res.status(200).json({
-            message: "Found bookings",
-            bookings
-        });
+        return res
+            .status(200)
+            .json((0, responseWrapper_1.responseWrapper)(true, bookings, null));
     }
     catch (error) {
         logger_1.logger.error({
