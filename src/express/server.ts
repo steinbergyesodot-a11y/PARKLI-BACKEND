@@ -2,12 +2,23 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
+import * as Sentry from "@sentry/node";
 import connect from '../index'
 import { appRouter } from "./router";
 import routerWeb from "./webhook/routes.stripewebhook";
 import errorHandler from "../utils/middleware/errorHandler";
+import { logger } from "../utils/logger/logger";
 
 dotenv.config();
+
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    tracesSampleRate: 1.0,
+  });
+}
+
 connect();
 
 const PORT = process.env.PORT || 3000;
@@ -36,8 +47,17 @@ app.use(express.json());
 // 5️⃣ Your normal API routes
 app.use(appRouter);
 
+// 6️⃣ Error handling middleware for Sentry
+app.use((err: any, req: any, res: any, next: any) => {
+  if (process.env.SENTRY_DSN) {
+    Sentry.captureException(err);
+  }
+  logger.error("Unhandled error:", err);
+  res.status(500).json({ error: "Internal server error" });
+});
+
 app.use(errorHandler)
 
 app.listen(PORT, () => {
-  console.log(`server running on port: ${PORT}`);
+  logger.info(`Server running on port: ${PORT}`);
 });

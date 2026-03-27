@@ -2,15 +2,12 @@ import mongoose from "mongoose";
 import { IBooking } from "./interface";
 import { BookingModel } from "./model";
 import { deleteBookingById } from "./controller";
+import { logger } from "../../utils/logger/logger";
 
 export class BookingManager{
-    static async createBooking(booking : IBooking){
-         return BookingModel.create(booking)
-    } 
-
-    // static async findDrivewayById(drivewayId : string){
-    //     return await BookingModel.findById(drivewayId)
-    // }
+        static async createBooking(booking : IBooking){
+            return BookingModel.create(booking)
+        } 
 
        static async getBookingsByRenterId(renterId : string){
         try{
@@ -19,20 +16,14 @@ export class BookingManager{
             return bookings;
 
         }catch(error){
-            console.error("Error fetching bookings:", error); 
+            logger.error("Error fetching bookings:", error); 
             throw error;
         }
        }
 
-
-       static async deleteBookingById(bookingId: string){
+        static async deleteBookingById(bookingId: string){
            const deletedBooking = await BookingModel.findByIdAndDelete(bookingId);
            return deletedBooking
        }
-
-    // static async getAllDriveways(){
-    //     const driveways = await drivewayModel.find()
-    //     return driveways
-    // }
     
 }

@@ -20,7 +20,7 @@ export const stripeWebhookController = async (req: Request, res: Response) => {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err: any) {
-    console.error("Webhook signature verification failed:", err.message);
+    logger.error("Webhook signature verification failed:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -56,7 +56,7 @@ export const stripeWebhookController = async (req: Request, res: Response) => {
       });
 
     } catch (err) {
-      console.error("Error creating booking:", err);
+      logger.error("Error creating booking:", err);
       return res.status(500).send("Server error");
     }
   }
