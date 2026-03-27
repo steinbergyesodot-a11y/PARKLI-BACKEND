@@ -13,6 +13,6 @@ bookingRouter.post('/', authenticateToken_1.authenticateToken, rateLimit_1.booki
 bookingRouter.post('/createPaymentIntent', authenticateToken_1.authenticateToken, controller_1.createPaymentIntent); // doesnt follow responseWrapper
 bookingRouter.get('/:userId', authenticateToken_1.authenticateToken, controller_1.getBookingsByRenterId);
 bookingRouter.get('/checkIfUserHasBookings/:userId', authenticateToken_1.authenticateToken, ownershipMiddleware_1.requireUserOwnership, controller_1.checkIfUserHasBooking);
-bookingRouter.delete('/:bookingId', controller_1.deleteBookingById);
-bookingRouter.post('/cancelBooking', controller_1.cancelBooking);
+bookingRouter.delete('/:bookingId', controller_1.deleteBookingById); // doesnt follow responseWrapper 
+bookingRouter.post('/cancelBooking', controller_1.cancelBooking); //  same
 exports.default = bookingRouter;

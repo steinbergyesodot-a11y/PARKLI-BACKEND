@@ -363,7 +363,9 @@ async function checkIfUserHasBooking(req, res, next) {
     }
     try {
         const exists = await model_1.BookingModel.exists({ renterId: userId });
-        return res.status(200).json(Boolean(exists));
+        return res
+            .status(200)
+            .json((0, responseWrapper_1.responseWrapper)(true, exists, null));
     }
     catch (error) {
         next(error);

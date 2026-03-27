@@ -16,9 +16,9 @@ bookingRouter.get('/:userId',authenticateToken,getBookingsByRenterId)
 
 bookingRouter.get('/checkIfUserHasBookings/:userId',authenticateToken,requireUserOwnership,checkIfUserHasBooking)
 
-bookingRouter.delete('/:bookingId',deleteBookingById)
+bookingRouter.delete('/:bookingId',deleteBookingById)   // doesnt follow responseWrapper 
 
-bookingRouter.post('/cancelBooking',cancelBooking)
+bookingRouter.post('/cancelBooking',cancelBooking)      //  same
 
 
 
