@@ -10,9 +10,8 @@ const ownershipMiddleware_1 = require("../../utils/middleware/ownershipMiddlewar
 const rateLimit_1 = require("../../utils/middleware/rateLimit");
 const bookingRouter = express_1.default.Router();
 bookingRouter.post('/', authenticateToken_1.authenticateToken, rateLimit_1.bookingRateLimit, controller_1.addBooking);
-bookingRouter.post('/createPaymentIntent', authenticateToken_1.authenticateToken, controller_1.createPaymentIntent); // doesnt follow responseWrapper
+bookingRouter.post('/createPaymentIntent', authenticateToken_1.authenticateToken, controller_1.createPaymentIntent);
 bookingRouter.get('/:userId', authenticateToken_1.authenticateToken, controller_1.getBookingsByRenterId);
 bookingRouter.get('/checkIfUserHasBookings/:userId', authenticateToken_1.authenticateToken, ownershipMiddleware_1.requireUserOwnership, controller_1.checkIfUserHasBooking);
-bookingRouter.delete('/:bookingId', controller_1.deleteBookingById); // doesnt follow responseWrapper 
-bookingRouter.post('/cancelBooking', controller_1.cancelBooking); //  same
+bookingRouter.post('/cancelBooking', authenticateToken_1.authenticateToken, ownershipMiddleware_1.requireBookingOwnership, controller_1.cancelBooking); // doesnt follow responseWrapper
 exports.default = bookingRouter;

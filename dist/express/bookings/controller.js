@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.addBooking = addBooking;
 exports.createPaymentIntent = createPaymentIntent;
 exports.getBookingsByRenterId = getBookingsByRenterId;
-exports.deleteBookingById = deleteBookingById;
 exports.checkIfUserHasBooking = checkIfUserHasBooking;
 exports.cancelBooking = cancelBooking;
 const mongoose_1 = __importDefault(require("mongoose"));
@@ -250,10 +249,10 @@ async function createPaymentIntent(req, res, next) {
             renterId,
             drivewayId
         });
-        return res.status(200).json({
+        return res.status(200).json((0, responseWrapper_1.responseWrapper)(true, {
             clientSecret: paymentIntent.client_secret,
             amount: stripeAmount
-        });
+        }, null));
     }
     catch (err) {
         (0, fraudDetection_1.logPaymentFailure)({
@@ -326,31 +325,6 @@ async function getBookingsByRenterId(req, res, next) {
             ip: req.ip
         });
         next(error);
-    }
-}
-async function deleteBookingById(req, res, next) {
-    const bookingId = req.params.bookingId;
-    // 1. Validate bookingId
-    if (!bookingId) {
-        return next(new Error("Missing booking ID"));
-    }
-    // 2. Validate ObjectId format
-    if (!mongoose_1.default.Types.ObjectId.isValid(bookingId)) {
-        return next(new Error("Invalid bookingId format"));
-    }
-    try {
-        // 3. Attempt deletion
-        const deletedBooking = await manager_1.BookingManager.deleteBookingById(bookingId);
-        if (!deletedBooking) {
-            return next(new Error("Booking not found"));
-        }
-        // 4. Success
-        return res.status(200).json({
-            message: "Booking deleted successfully"
-        });
-    }
-    catch (error) {
-        next(error); // Pass DB/server errors to middleware
     }
 }
 async function checkIfUserHasBooking(req, res, next) {

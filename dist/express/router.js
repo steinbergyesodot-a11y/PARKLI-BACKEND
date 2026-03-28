@@ -16,7 +16,3 @@ exports.appRouter.use(config_1.config.bookings.baseRoute, routes_3.default);
 exports.appRouter.use(['/isAlive', '/isalive', '/health'], (_req, res) => {
     res.status(200).send('alive');
 });
-// Test Sentry error tracking
-exports.appRouter.get('/test-error', (_req, _res, next) => {
-    next(new Error('This is a test error for Sentry'));
-});
