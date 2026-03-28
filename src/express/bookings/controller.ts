@@ -302,10 +302,12 @@ export async function createPaymentIntent(req: Request, res: Response, next: Nex
       drivewayId
     });
 
-    return res.status(200).json({
-      clientSecret: paymentIntent.client_secret,
-      amount: stripeAmount
-    });
+    return res.status(200).json(
+  responseWrapper(true, {
+    clientSecret: paymentIntent.client_secret,
+    amount: stripeAmount
+  }, null)
+);
 
   } catch (err: any) {
     logPaymentFailure({
@@ -391,39 +393,6 @@ export async function getBookingsByRenterId(req: Request, res: Response, next: N
         next(error);
     }
 }
-
-
-export async function deleteBookingById(req: Request, res: Response, next: NextFunction) {
-    const bookingId = req.params.bookingId as string;
-
-    // 1. Validate bookingId
-    if (!bookingId) {
-        return next(new Error("Missing booking ID"));
-    }
-
-    // 2. Validate ObjectId format
-    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
-        return next(new Error("Invalid bookingId format"));
-    }
-
-    try {
-        // 3. Attempt deletion
-        const deletedBooking = await BookingManager.deleteBookingById(bookingId);
-
-        if (!deletedBooking) {
-            return next(new Error("Booking not found"));
-        }
-
-        // 4. Success
-        return res.status(200).json({
-            message: "Booking deleted successfully"
-        });
-
-    } catch (error) {
-        next(error); // Pass DB/server errors to middleware
-    }
-}
-
 
 
 export async function checkIfUserHasBooking(req: Request, res: Response, next: NextFunction) {

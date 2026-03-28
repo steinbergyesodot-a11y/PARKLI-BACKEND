@@ -41,7 +41,7 @@ router.post("/google-login", async (req, res) => {
             email: user.email,
             drivewayIds: user.drivewayIds
         };
-        if (!process.env.JWT_SECRET) {
+        if (!process.env.JWT_SECRET_KEY) {
             throw new Error("JWT_SECRET is not defined");
         }
         const token = jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET, { expiresIn: "7d" });

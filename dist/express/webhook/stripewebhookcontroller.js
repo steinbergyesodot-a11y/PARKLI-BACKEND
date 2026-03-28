@@ -17,7 +17,7 @@ const stripeWebhookController = async (req, res) => {
         event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
     }
     catch (err) {
-        console.error("Webhook signature verification failed:", err.message);
+        logger_js_1.logger.error("Webhook signature verification failed:", err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
     if (event.type === "payment_intent.succeeded") {
@@ -41,7 +41,7 @@ const stripeWebhookController = async (req, res) => {
             });
         }
         catch (err) {
-            console.error("Error creating booking:", err);
+            logger_js_1.logger.error("Error creating booking:", err);
             return res.status(500).send("Server error");
         }
     }

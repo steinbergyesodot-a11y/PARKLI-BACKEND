@@ -1,4 +1,5 @@
 import { Request,Response,NextFunction } from "express";
+import { BookingModel } from "../../express/bookings/model";
 
 export function requireUserOwnership(req:Request, res:Response, next:NextFunction) {
   const loggedInUserId = req.user._id;
@@ -24,6 +25,34 @@ export function requireDrivewayOwnership(req:Request, res:Response, next:NextFun
     } 
     next();
 
+}
+
+export async function requireBookingOwnership(req:Request, res:Response, next:NextFunction) {
+  try {
+    const bookingId = req.params.bookingId || req.body.bookingId;
+    const loggedInUserId = req.user._id;
+
+    if (!bookingId) {
+      return res.status(400).json({ message: "Missing booking ID" });
+    }
+
+    const booking = await BookingModel.findById(bookingId);
+    
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    const isRenter = booking.renterId.toString() === loggedInUserId;
+    const isOwner = booking.ownerId.toString() === loggedInUserId;
+
+    if (!isRenter && !isOwner) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    next();
+  } catch (error) {
+    return res.status(500).json({ message: "Error validating booking ownership" });
+  }
 }
 
 
