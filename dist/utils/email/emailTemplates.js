@@ -1,11 +1,9 @@
-import nodemailer from 'nodemailer';
-import { logger } from '../logger/logger';
-import { userModel } from '../../express/users/model';
-import { BookingModel } from '../../express/bookings/model';
-
-// Import email templates
-const bookingConfirmation = (data: any): string => {
-  return `
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.bookingConfirmation = bookingConfirmation;
+exports.bookingCancelled = bookingCancelled;
+function bookingConfirmation(data) {
+    return `
     <!DOCTYPE html>
     <html>
       <head>
@@ -53,7 +51,7 @@ const bookingConfirmation = (data: any): string => {
             </div>
             <div class="detail-row">
               <span class="detail-label">Price:</span>
-              <span class="price">$\${(data.price / 100).toFixed(2)}</span>
+              <span class="price">$${(data.price / 100).toFixed(2)}</span>
             </div>
           </div>
 
@@ -67,10 +65,9 @@ const bookingConfirmation = (data: any): string => {
       </body>
     </html>
   `;
-};
-
-const bookingCancelled = (data: any): string => {
-  return `
+}
+function bookingCancelled(data) {
+    return `
     <!DOCTYPE html>
     <html>
       <head>
@@ -119,118 +116,4 @@ const bookingCancelled = (data: any): string => {
       </body>
     </html>
   `;
-};
-
-const transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE || 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
-
-export async function sendBookingConfirmationEmail(renterId: string, bookingId: string) {
-  try {
-    // Fetch renter details
-    const renter = await userModel.findById(renterId);
-    if (!renter || !renter.email) {
-      logger.warn({
-        message: 'Cannot send email: renter not found or has no email',
-        renterId,
-      });
-      return;
-    }
-
-    // Fetch booking details
-    const booking = await BookingModel.findById(bookingId);
-    if (!booking) {
-      logger.warn({
-        message: 'Cannot send email: booking not found',
-        bookingId,
-      });
-      return;
-    }
-
-    // Generate email HTML
-    const html = bookingConfirmation({
-      renterName: renter.firstName,
-      bookingId: booking._id?.toString() || '',
-      address: booking.address,
-      gameDate: booking.gameDate,
-      parkingTime: booking.parkingTime,
-      price: booking.price,
-      visitingTeam: booking.visiting_team,
-    });
-
-    // Send email
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: renter.email,
-      subject: 'Booking Confirmed - PARKLI',
-      html,
-    });
-
-    logger.info({
-      message: 'Booking confirmation email sent',
-      renterId,
-      bookingId,
-      email: renter.email,
-    });
-  } catch (error: any) {
-    logger.error({
-      message: 'Failed to send booking confirmation email',
-      error: error.message,
-      renterId,
-      bookingId,
-    });
-  }
-}
-
-export async function sendBookingCancelledEmail(renterId: string, bookingId: string) {
-  try {
-    const renter = await userModel.findById(renterId);
-    if (!renter || !renter.email) {
-      logger.warn({
-        message: 'Cannot send cancellation email: renter not found',
-        renterId,
-      });
-      return;
-    }
-
-    const booking = await BookingModel.findById(bookingId);
-    if (!booking) {
-      logger.warn({
-        message: 'Cannot send cancellation email: booking not found',
-        bookingId,
-      });
-      return;
-    }
-
-    const html = bookingCancelled({
-      renterName: renter.firstName,
-      bookingId: booking._id?.toString() || '',
-      address: booking.address,
-      gameDate: booking.gameDate,
-    });
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: renter.email,
-      subject: 'Booking Cancelled - PARKLI',
-      html,
-    });
-
-    logger.info({
-      message: 'Booking cancellation email sent',
-      renterId,
-      bookingId,
-    });
-  } catch (error: any) {
-    logger.error({
-      message: 'Failed to send booking cancellation email',
-      error: error.message,
-      renterId,
-      bookingId,
-    });
-  }
 }

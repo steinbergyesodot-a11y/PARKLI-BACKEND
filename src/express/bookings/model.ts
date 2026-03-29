@@ -2,12 +2,6 @@ import mongoose, { Schema } from 'mongoose'
 import { IBooking } from './interface';
 
 
-
-
-
-
-
-
 const BookingSchema = new mongoose.Schema<IBooking>({
    
     drivewayId: {

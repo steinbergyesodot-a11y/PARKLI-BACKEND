@@ -12,7 +12,6 @@ import { bookingSchemaZod, paymentIntentSchemaZod } from "./validation";
 import { logger } from "../../utils/logger/logger";
 import { detectRapidBookings, detectRepeatedBookingAttempts, logPaymentFailure, logPaymentSuccess } from "../../utils/fraudDetection";
 import { responseWrapper } from "../../utils/responseWrapper";
-import { emitBookingCreated, emitBookingCancelled } from "../../utils/email/emailQueue";
 
 
 function convertTo24Hour(timeStr: string): string {
@@ -157,9 +156,6 @@ export async function addBooking(req: Request, res: Response, next: NextFunction
       renterId,
       ownerId
     });
-
-    // Emit event to send confirmation email (async, non-blocking)
-    emitBookingCreated(renterId, booking._id.toString());
 
     return res
        .status(200)
@@ -446,16 +442,10 @@ export async function cancelBooking(req:Request,res:Response,next: NextFunction)
         if (!updatedDriveway) {
             return next(new Error("Driveway not found"));
         }
-
-        // Emit event to send cancellation email (async, non-blocking)
-        emitBookingCancelled(booking.renterId.toString(), bookingId);
-
-        return res.status(200).json(
-          responseWrapper(true, {
+          return res.status(200).json({
             message: "Booking cancelled successfully",
             refund: refund
-          }, null)
-        );
+        });
     }catch(error){
         next(error)
     }

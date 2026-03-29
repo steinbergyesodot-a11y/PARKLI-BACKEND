@@ -35,8 +35,8 @@ class UsersManager {
             }
             // Clear lockout if time has passed
             if (user.lockoutUntil && new Date() >= user.lockoutUntil) {
-                await model_1.userModel.updateOne({ _id: user._id }, { lockoutUntil: null, failedAttempts: 0 });
-                user.lockoutUntil = null;
+                await model_1.userModel.updateOne({ _id: user._id }, { lockoutUntil: undefined, failedAttempts: 0 });
+                user.lockoutUntil = undefined;
                 user.failedAttempts = 0;
             }
             const isMatch = await bcrypt_1.default.compare(password, user.password || "");

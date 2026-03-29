@@ -74,7 +74,7 @@ export async function addDriveway(req: Request, res: Response, next: NextFunctio
     walk: data.walk,
     price: data.price,
     rules: data.rules,
-    description: clean(data.description),
+    description: data.description ? clean(data.description) : "",
     images: imageUrls
     };
 

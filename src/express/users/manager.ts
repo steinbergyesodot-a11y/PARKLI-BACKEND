@@ -41,8 +41,8 @@ export class UsersManager{
 
         // Clear lockout if time has passed
         if (user.lockoutUntil && new Date() >= user.lockoutUntil) {
-          await userModel.updateOne({ _id: user._id }, { lockoutUntil: null, failedAttempts: 0 });
-          user.lockoutUntil = null;
+          await userModel.updateOne({ _id: user._id }, { lockoutUntil: undefined, failedAttempts: 0 });
+          user.lockoutUntil = undefined;
           user.failedAttempts = 0;
         }
         

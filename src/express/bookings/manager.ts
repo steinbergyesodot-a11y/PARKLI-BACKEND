@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import { IBooking } from "./interface";
 import { BookingModel } from "./model";
-import { deleteBookingById } from "./controller";
 import { logger } from "../../utils/logger/logger";
 
 export class BookingManager{

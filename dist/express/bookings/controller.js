@@ -19,7 +19,6 @@ const validation_1 = require("./validation");
 const logger_1 = require("../../utils/logger/logger");
 const fraudDetection_1 = require("../../utils/fraudDetection");
 const responseWrapper_1 = require("../../utils/responseWrapper");
-const emailQueue_1 = require("../../utils/email/emailQueue");
 function convertTo24Hour(timeStr) {
     const date = new Date(`1970-01-01 ${timeStr}`);
     if (isNaN(date.getTime()))
@@ -131,8 +130,6 @@ async function addBooking(req, res, next) {
             renterId,
             ownerId
         });
-        // Emit event to send confirmation email (async, non-blocking)
-        (0, emailQueue_1.emitBookingCreated)(renterId, booking._id.toString());
         return res
             .status(200)
             .json((0, responseWrapper_1.responseWrapper)(true, booking, null));
@@ -371,12 +368,10 @@ async function cancelBooking(req, res, next) {
         if (!updatedDriveway) {
             return next(new Error("Driveway not found"));
         }
-        // Emit event to send cancellation email (async, non-blocking)
-        (0, emailQueue_1.emitBookingCancelled)(booking.renterId.toString(), bookingId);
-        return res.status(200).json((0, responseWrapper_1.responseWrapper)(true, {
+        return res.status(200).json({
             message: "Booking cancelled successfully",
             refund: refund
-        }, null));
+        });
     }
     catch (error) {
         next(error);

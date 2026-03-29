@@ -78,7 +78,7 @@ async function addDriveway(req, res, next) {
             walk: data.walk,
             price: data.price,
             rules: data.rules,
-            description: (0, sanitizeHTML_1.clean)(data.description),
+            description: data.description ? (0, sanitizeHTML_1.clean)(data.description) : "",
             images: imageUrls
         };
         logger_1.logger.info({

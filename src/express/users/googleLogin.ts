@@ -52,7 +52,7 @@ router.post("/google-login", async (req, res) => {
 
     const token = jwt.sign(
       payload,
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET as string,
       { expiresIn: "7d" }
     );
 
