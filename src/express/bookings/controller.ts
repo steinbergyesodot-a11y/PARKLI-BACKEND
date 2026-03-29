@@ -12,6 +12,7 @@ import { bookingSchemaZod, paymentIntentSchemaZod } from "./validation";
 import { logger } from "../../utils/logger/logger";
 import { detectRapidBookings, detectRepeatedBookingAttempts, logPaymentFailure, logPaymentSuccess } from "../../utils/fraudDetection";
 import { responseWrapper } from "../../utils/responseWrapper";
+import { sendBookingNotification } from "../../utils/email";
 
 
 function convertTo24Hour(timeStr: string): string {
@@ -149,12 +150,33 @@ export async function addBooking(req: Request, res: Response, next: NextFunction
       return next(new Error("Sorry, this driveway was just booked by someone else."));
     }
 
+    const renter = await userModel.findById(renterId).select('firstName email');
+    if (!renter) {
+      logger.warn({
+        message: "Renter not found",
+        renterId
+      });
+      return next(new Error("Renter not found"));
+    }
+
     logger.info({
       message: "Booking created successfully",
       bookingId: booking._id,
       drivewayId,
       renterId,
       ownerId
+    });
+
+    // Send booking notification to renter
+    sendBookingNotification({
+      firstName: renter.firstName,
+      email: renter.email,
+      address: booking.address,
+      gameDate: booking.gameDate,
+      parkingTime: booking.parkingTime,
+      bookedAt: booking.bookedAt,
+      cancelBy: booking.cancelBy,
+      visitingTeam: booking.visiting_team
     });
 
     return res

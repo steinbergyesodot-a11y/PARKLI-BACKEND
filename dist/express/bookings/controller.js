@@ -19,6 +19,7 @@ const validation_1 = require("./validation");
 const logger_1 = require("../../utils/logger/logger");
 const fraudDetection_1 = require("../../utils/fraudDetection");
 const responseWrapper_1 = require("../../utils/responseWrapper");
+const email_1 = require("../../utils/email");
 function convertTo24Hour(timeStr) {
     const date = new Date(`1970-01-01 ${timeStr}`);
     if (isNaN(date.getTime()))
@@ -123,12 +124,31 @@ async function addBooking(req, res, next) {
             });
             return next(new Error("Sorry, this driveway was just booked by someone else."));
         }
+        const renter = await model_2.userModel.findById(renterId).select('firstName email');
+        if (!renter) {
+            logger_1.logger.warn({
+                message: "Renter not found",
+                renterId
+            });
+            return next(new Error("Renter not found"));
+        }
         logger_1.logger.info({
             message: "Booking created successfully",
             bookingId: booking._id,
             drivewayId,
             renterId,
             ownerId
+        });
+        // Send booking notification to renter
+        (0, email_1.sendBookingNotification)({
+            firstName: renter.firstName,
+            email: renter.email,
+            address: booking.address,
+            gameDate: booking.gameDate,
+            parkingTime: booking.parkingTime,
+            bookedAt: booking.bookedAt,
+            cancelBy: booking.cancelBy,
+            visitingTeam: booking.visiting_team
         });
         return res
             .status(200)
