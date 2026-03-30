@@ -5,24 +5,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendBookingNotification = sendBookingNotification;
 exports.sendOwnerBookingNotification = sendOwnerBookingNotification;
-const nodemailer_1 = __importDefault(require("nodemailer"));
+const mail_1 = __importDefault(require("@sendgrid/mail"));
 const logger_1 = require("../logger/logger");
-// Timeout wrapper for email sending
-function withTimeout(promise, timeoutMs) {
-    return Promise.race([
-        promise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error(`Email sending timed out after ${timeoutMs}ms`)), timeoutMs)),
-    ]);
+// Set SendGrid API key
+if (process.env.SENDGRID_API_KEY) {
+    mail_1.default.setApiKey(process.env.SENDGRID_API_KEY);
 }
-// Create nodemailer transporter
-const transporter = nodemailer_1.default.createTransport({
-    host: 'smtp.sendgrid.net',
-    port: 587,
-    auth: {
-        user: 'apikey',
-        pass: process.env.SENDGRID_API_KEY,
-    },
-});
 // Build HTML email template
 function buildBookingEmail(data) {
     return `
@@ -113,21 +101,20 @@ async function sendBookingNotification(data) {
         // Build email HTML
         const html = buildBookingEmail(data);
         console.log("📧 HTML built, now sending email...");
-        // Send email with 10 second timeout
-        console.log("📧 Calling transporter.sendMail...");
-        const result = await withTimeout(transporter.sendMail({
-            from: 'steinbergyosef@gmail.com',
+        // Send email via SendGrid API
+        console.log("📧 Calling sgMail.send...");
+        const response = await mail_1.default.send({
             to: data.email,
+            from: 'steinbergyosef@gmail.com',
             subject: 'Booking Confirmed - PARKLI',
             html: html,
-        }), 10000 // 10 second timeout
-        );
-        console.log("📧 transporter.sendMail completed with result:", result);
-        console.log("✅ Email sent successfully! Message ID:", result.messageId);
+        });
+        console.log("📧 sgMail.send completed with response:", response);
+        console.log("✅ Email sent successfully!");
         logger_1.logger.info({
             message: "Booking notification sent successfully",
             email: data.email,
-            messageId: result.messageId
+            messageId: response[0].headers['x-message-id']
         });
     }
     catch (error) {
@@ -224,21 +211,20 @@ async function sendOwnerBookingNotification(data) {
         // Build email HTML
         const html = buildOwnerBookingEmail(data);
         console.log("📧 Owner HTML built, now sending email...");
-        // Send email with 10 second timeout
-        console.log("📧 Calling transporter.sendMail for owner...");
-        const result = await withTimeout(transporter.sendMail({
-            from: 'steinbergyosef@gmail.com',
+        // Send email via SendGrid API
+        console.log("📧 Calling sgMail.send for owner...");
+        const response = await mail_1.default.send({
             to: data.ownerEmail,
+            from: 'steinbergyosef@gmail.com',
             subject: 'New Booking - PARKLI',
             html: html,
-        }), 10000 // 10 second timeout
-        );
-        console.log("📧 transporter.sendMail for owner completed with result:", result);
-        console.log("✅ Owner notification sent! Message ID:", result.messageId);
+        });
+        console.log("📧 sgMail.send for owner completed with response:", response);
+        console.log("✅ Owner notification sent!");
         logger_1.logger.info({
             message: "Owner booking notification sent successfully",
             ownerEmail: data.ownerEmail,
-            messageId: result.messageId
+            messageId: response[0].headers['x-message-id']
         });
     }
     catch (error) {

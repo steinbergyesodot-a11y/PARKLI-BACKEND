@@ -15,6 +15,7 @@
   "description": "",
   "dependencies": {
     "@logtail/winston": "^0.5.8",
+    "@sendgrid/mail": "^8.1.6",
     "@sentry/node": "^10.46.0",
     "@types/express": "^5.0.6",
     "@types/mongoose": "^5.11.96",
