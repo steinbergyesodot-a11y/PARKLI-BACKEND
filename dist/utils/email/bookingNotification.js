@@ -105,13 +105,16 @@ async function sendBookingNotification(data) {
         });
         // Build email HTML
         const html = buildBookingEmail(data);
+        console.log("📧 HTML built, now sending email...");
         // Send email
+        console.log("📧 Calling transporter.sendMail...");
         const result = await transporter.sendMail({
             from: 'steinbergyosef@gmail.com',
             to: data.email,
             subject: 'Booking Confirmed - PARKLI',
             html: html,
         });
+        console.log("📧 transporter.sendMail completed with result:", result);
         console.log("✅ Email sent successfully! Message ID:", result.messageId);
         logger_1.logger.info({
             message: "Booking notification sent successfully",
@@ -193,10 +196,10 @@ function buildOwnerBookingEmail(data) {
 async function sendOwnerBookingNotification(data) {
     try {
         // Validate required environment variables
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+        if (!process.env.SENDGRID_API_KEY) {
             logger_1.logger.warn({
-                message: "Email service not configured. Skipping owner notification.",
-                email: data.ownerEmail
+                message: "SendGrid API key not configured. Skipping owner notification.",
+                ownerEmail: data.ownerEmail
             });
             return;
         }
@@ -212,13 +215,16 @@ async function sendOwnerBookingNotification(data) {
         });
         // Build email HTML
         const html = buildOwnerBookingEmail(data);
+        console.log("📧 Owner HTML built, now sending email...");
         // Send email
+        console.log("📧 Calling transporter.sendMail for owner...");
         const result = await transporter.sendMail({
-            from: process.env.EMAIL_USER,
+            from: 'steinbergyosef@gmail.com',
             to: data.ownerEmail,
             subject: 'New Booking - PARKLI',
             html: html,
         });
+        console.log("📧 transporter.sendMail for owner completed with result:", result);
         console.log("✅ Owner notification sent! Message ID:", result.messageId);
         logger_1.logger.info({
             message: "Owner booking notification sent successfully",
