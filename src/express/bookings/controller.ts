@@ -12,7 +12,7 @@ import { bookingSchemaZod, paymentIntentSchemaZod } from "./validation";
 import { logger } from "../../utils/logger/logger";
 import { detectRapidBookings, detectRepeatedBookingAttempts, logPaymentFailure, logPaymentSuccess } from "../../utils/fraudDetection";
 import { responseWrapper } from "../../utils/responseWrapper";
-import { sendBookingNotification } from "../../utils/email/bookingNotification";
+import { sendBookingNotification, sendOwnerBookingNotification } from "../../utils/email/bookingNotification";
 
 
 function convertTo24Hour(timeStr: string): string {
@@ -159,6 +159,15 @@ export async function addBooking(req: Request, res: Response, next: NextFunction
       return next(new Error("Renter not found"));
     }
 
+    const owner = await userModel.findById(ownerId).select('firstName email');
+    if (!owner) {
+      logger.warn({
+        message: "Owner not found",
+        ownerId
+      });
+      return next(new Error("Owner not found"));
+    }
+
     logger.info({
       message: "Booking created successfully",
       bookingId: booking._id,
@@ -183,6 +192,25 @@ export async function addBooking(req: Request, res: Response, next: NextFunction
       console.error("⚠️  Error calling sendBookingNotification:", emailError.message);
       logger.error({
         message: "Error calling sendBookingNotification",
+        error: emailError.message
+      });
+    }
+
+    // Send booking notification to owner (fire-and-forget, email errors won't crash booking)
+    try {
+      sendOwnerBookingNotification({
+        ownerName: owner.firstName,
+        ownerEmail: owner.email,
+        renterName: renter.firstName,
+        address: booking.address,
+        gameDate: booking.gameDate,
+        parkingTime: booking.parkingTime,
+        bookedAt: booking.bookedAt
+      });
+    } catch (emailError: any) {
+      console.error("⚠️  Error calling sendOwnerBookingNotification:", emailError.message);
+      logger.error({
+        message: "Error calling sendOwnerBookingNotification",
         error: emailError.message
       });
     }

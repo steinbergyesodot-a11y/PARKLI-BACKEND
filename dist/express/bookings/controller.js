@@ -133,6 +133,14 @@ async function addBooking(req, res, next) {
             });
             return next(new Error("Renter not found"));
         }
+        const owner = await model_2.userModel.findById(ownerId).select('firstName email');
+        if (!owner) {
+            logger_1.logger.warn({
+                message: "Owner not found",
+                ownerId
+            });
+            return next(new Error("Owner not found"));
+        }
         logger_1.logger.info({
             message: "Booking created successfully",
             bookingId: booking._id,
@@ -157,6 +165,25 @@ async function addBooking(req, res, next) {
             console.error("⚠️  Error calling sendBookingNotification:", emailError.message);
             logger_1.logger.error({
                 message: "Error calling sendBookingNotification",
+                error: emailError.message
+            });
+        }
+        // Send booking notification to owner (fire-and-forget, email errors won't crash booking)
+        try {
+            (0, bookingNotification_1.sendOwnerBookingNotification)({
+                ownerName: owner.firstName,
+                ownerEmail: owner.email,
+                renterName: renter.firstName,
+                address: booking.address,
+                gameDate: booking.gameDate,
+                parkingTime: booking.parkingTime,
+                bookedAt: booking.bookedAt
+            });
+        }
+        catch (emailError) {
+            console.error("⚠️  Error calling sendOwnerBookingNotification:", emailError.message);
+            logger_1.logger.error({
+                message: "Error calling sendOwnerBookingNotification",
                 error: emailError.message
             });
         }

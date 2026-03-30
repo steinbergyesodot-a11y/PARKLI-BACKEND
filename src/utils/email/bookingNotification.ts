@@ -12,6 +12,16 @@ interface emailData {
     visitingTeam?: string;
 }
 
+interface ownerEmailData {
+    ownerName: string;
+    ownerEmail: string;
+    renterName: string;
+    address: string;
+    gameDate: string;
+    parkingTime: string;
+    bookedAt?: Date | string;
+}
+
 // Create nodemailer transporter
 const transporter = nodemailer.createTransport({
   service: process.env.EMAIL_SERVICE || 'gmail',
@@ -135,6 +145,119 @@ export async function sendBookingNotification(data: emailData) {
       message: "Error sending booking notification",
       error: error.message,
       email: data.email,
+      stack: error.stack
+    });
+    // Don't throw - let booking succeed even if email fails
+  }
+}
+
+// Build HTML email template for owner
+function buildOwnerBookingEmail(data: ownerEmailData): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #28a745; color: white; padding: 20px; text-align: center; border-radius: 5px; }
+          .content { background-color: #f9f9f9; padding: 20px; margin: 20px 0; border-radius: 5px; }
+          .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #ddd; }
+          .detail-label { font-weight: bold; }
+          .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>New Booking! 🎉</h1>
+          </div>
+
+          <p>Hi ${data.ownerName},</p>
+          <p>You have a new booking for your parking space!</p>
+
+          <div class="content">
+            <h2>Booking Details</h2>
+            <div class="detail-row">
+              <span class="detail-label">Renter:</span>
+              <span>${data.renterName}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Address:</span>
+              <span>${data.address}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Game Date:</span>
+              <span>${data.gameDate}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Parking Time:</span>
+              <span>${data.parkingTime}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Booked At:</span>
+              <span>${new Date(data.bookedAt || '').toLocaleString()}</span>
+            </div>
+          </div>
+
+          <p><strong>Note:</strong> The renter can cancel up to 24 hours before the parking time.</p>
+
+          <div class="footer">
+            <p>Thank you for using PARKLI!</p>
+            <p>&copy; 2026 PARKLI. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+export async function sendOwnerBookingNotification(data: ownerEmailData) {
+  try {
+    // Validate required environment variables
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      logger.warn({
+        message: "Email service not configured. Skipping owner notification.",
+        email: data.ownerEmail
+      });
+      return;
+    }
+
+    console.log("📧 Starting owner notification to:", data.ownerEmail);
+    logger.info({
+      message: "Sending owner booking notification",
+      ownerEmail: data.ownerEmail,
+      ownerName: data.ownerName,
+      renterName: data.renterName,
+      address: data.address,
+      gameDate: data.gameDate,
+      parkingTime: data.parkingTime
+    });
+
+    // Build email HTML
+    const html = buildOwnerBookingEmail(data);
+
+    // Send email
+    const result = await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: data.ownerEmail,
+      subject: 'New Booking - PARKLI',
+      html: html,
+    });
+
+    console.log("✅ Owner notification sent! Message ID:", result.messageId);
+    logger.info({
+      message: "Owner booking notification sent successfully",
+      ownerEmail: data.ownerEmail,
+      messageId: result.messageId
+    });
+
+  } catch (error: any) {
+    console.log("❌ Owner email error:", error.message);
+    logger.error({
+      message: "Error sending owner booking notification",
+      error: error.message,
+      ownerEmail: data.ownerEmail,
       stack: error.stack
     });
     // Don't throw - let booking succeed even if email fails
