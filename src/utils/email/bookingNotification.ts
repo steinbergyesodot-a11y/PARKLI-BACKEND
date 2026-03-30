@@ -1,6 +1,16 @@
 import nodemailer from 'nodemailer';
 import { logger } from '../logger/logger';
 
+// Timeout wrapper for email sending
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Email sending timed out after ${timeoutMs}ms`)), timeoutMs)
+    ),
+  ]);
+}
+
 interface emailData {
     firstName: string;
     email: string;
@@ -126,14 +136,17 @@ export async function sendBookingNotification(data: emailData) {
     const html = buildBookingEmail(data);
     console.log("📧 HTML built, now sending email...");
 
-    // Send email
+    // Send email with 10 second timeout
     console.log("📧 Calling transporter.sendMail...");
-    const result = await transporter.sendMail({
-      from: 'steinbergyosef@gmail.com',
-      to: data.email,
-      subject: 'Booking Confirmed - PARKLI',
-      html: html,
-    });
+    const result = await withTimeout(
+      transporter.sendMail({
+        from: 'steinbergyosef@gmail.com',
+        to: data.email,
+        subject: 'Booking Confirmed - PARKLI',
+        html: html,
+      }),
+      10000 // 10 second timeout
+    );
     console.log("📧 transporter.sendMail completed with result:", result);
 
     console.log("✅ Email sent successfully! Message ID:", result.messageId);
@@ -242,14 +255,17 @@ export async function sendOwnerBookingNotification(data: ownerEmailData) {
     const html = buildOwnerBookingEmail(data);
     console.log("📧 Owner HTML built, now sending email...");
 
-    // Send email
+    // Send email with 10 second timeout
     console.log("📧 Calling transporter.sendMail for owner...");
-    const result = await transporter.sendMail({
-      from: 'steinbergyosef@gmail.com',
-      to: data.ownerEmail,
-      subject: 'New Booking - PARKLI',
-      html: html,
-    });
+    const result = await withTimeout(
+      transporter.sendMail({
+        from: 'steinbergyosef@gmail.com',
+        to: data.ownerEmail,
+        subject: 'New Booking - PARKLI',
+        html: html,
+      }),
+      10000 // 10 second timeout
+    );
     console.log("📧 transporter.sendMail for owner completed with result:", result);
 
     console.log("✅ Owner notification sent! Message ID:", result.messageId);
