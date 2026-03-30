@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { logger } from './logger/logger';
+import { logger } from '../logger/logger';
 
 interface emailData {
     firstName: string;
@@ -99,6 +99,7 @@ export async function sendBookingNotification(data: emailData) {
       return;
     }
 
+    console.log("📧 Starting email send to:", data.email);
     logger.info({
       message: "Sending booking notification",
       email: data.email,
@@ -121,6 +122,7 @@ export async function sendBookingNotification(data: emailData) {
       html: html,
     });
 
+    console.log("✅ Email sent successfully! Message ID:", result.messageId);
     logger.info({
       message: "Booking notification sent successfully",
       email: data.email,
@@ -128,6 +130,7 @@ export async function sendBookingNotification(data: emailData) {
     });
 
   } catch (error: any) {
+    console.log("❌ Email error:", error.message);
     logger.error({
       message: "Error sending booking notification",
       error: error.message,

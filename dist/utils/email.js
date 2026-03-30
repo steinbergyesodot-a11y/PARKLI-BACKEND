@@ -81,15 +81,18 @@ function buildBookingEmail(data) {
   `;
 }
 async function sendBookingNotification(data) {
+    console.log("📧 sendBookingNotification CALLED with email:", data.email);
     try {
         // Validate required environment variables
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+            console.log("⚠️  EMAIL NOT CONFIGURED - skipping email send");
             logger_1.logger.warn({
                 message: "Email service not configured. Skipping email notification.",
                 email: data.email
             });
             return;
         }
+        console.log("📧 Starting email send to:", data.email);
         logger_1.logger.info({
             message: "Sending booking notification",
             email: data.email,
@@ -103,12 +106,14 @@ async function sendBookingNotification(data) {
         // Build email HTML
         const html = buildBookingEmail(data);
         // Send email
+        console.log("📨 Attempting to send via Gmail...");
         const result = await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: data.email,
             subject: 'Booking Confirmed - PARKLI',
             html: html,
         });
+        console.log("✅ Email sent successfully! Message ID:", result.messageId);
         logger_1.logger.info({
             message: "Booking notification sent successfully",
             email: data.email,
@@ -116,6 +121,7 @@ async function sendBookingNotification(data) {
         });
     }
     catch (error) {
+        console.log("❌ Email error:", error.message);
         logger_1.logger.error({
             message: "Error sending booking notification",
             error: error.message,

@@ -12,7 +12,7 @@ import { bookingSchemaZod, paymentIntentSchemaZod } from "./validation";
 import { logger } from "../../utils/logger/logger";
 import { detectRapidBookings, detectRepeatedBookingAttempts, logPaymentFailure, logPaymentSuccess } from "../../utils/fraudDetection";
 import { responseWrapper } from "../../utils/responseWrapper";
-import { sendBookingNotification } from "../../utils/email";
+import { sendBookingNotification } from "../../utils/email/bookingNotification";
 
 
 function convertTo24Hour(timeStr: string): string {
@@ -59,7 +59,7 @@ export async function addBooking(req: Request, res: Response, next: NextFunction
     message: "addBooking called",
     ip: req.ip,
   });
-
+  console.log("adding booking")
   try {
     const data = bookingSchemaZod.parse(req.body);
 
@@ -167,17 +167,25 @@ export async function addBooking(req: Request, res: Response, next: NextFunction
       ownerId
     });
 
-    // Send booking notification to renter
-    sendBookingNotification({
-      firstName: renter.firstName,
-      email: renter.email,
-      address: booking.address,
-      gameDate: booking.gameDate,
-      parkingTime: booking.parkingTime,
-      bookedAt: booking.bookedAt,
-      cancelBy: booking.cancelBy,
-      visitingTeam: booking.visiting_team
-    });
+    // Send booking notification to renter (fire-and-forget, email errors won't crash booking)
+    try {
+      sendBookingNotification({
+        firstName: renter.firstName,
+        email: renter.email,
+        address: booking.address,
+        gameDate: booking.gameDate,
+        parkingTime: booking.parkingTime,
+        bookedAt: booking.bookedAt,
+        cancelBy: booking.cancelBy,
+        visitingTeam: booking.visiting_team
+      });
+    } catch (emailError: any) {
+      console.error("⚠️  Error calling sendBookingNotification:", emailError.message);
+      logger.error({
+        message: "Error calling sendBookingNotification",
+        error: emailError.message
+      });
+    }
 
     return res
        .status(200)

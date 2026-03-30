@@ -55,6 +55,7 @@ async function addBooking(req, res, next) {
         message: "addBooking called",
         ip: req.ip,
     });
+    console.log("adding booking");
     try {
         const data = validation_1.bookingSchemaZod.parse(req.body);
         const { ownerId, drivewayId, renterId, address, price, gameDate, paymentIntentId, parkingBegins, visiting_team } = data;
@@ -139,17 +140,26 @@ async function addBooking(req, res, next) {
             renterId,
             ownerId
         });
-        // Send booking notification to renter
-        (0, email_1.sendBookingNotification)({
-            firstName: renter.firstName,
-            email: renter.email,
-            address: booking.address,
-            gameDate: booking.gameDate,
-            parkingTime: booking.parkingTime,
-            bookedAt: booking.bookedAt,
-            cancelBy: booking.cancelBy,
-            visitingTeam: booking.visiting_team
-        });
+        // Send booking notification to renter (fire-and-forget, email errors won't crash booking)
+        try {
+            (0, email_1.sendBookingNotification)({
+                firstName: renter.firstName,
+                email: renter.email,
+                address: booking.address,
+                gameDate: booking.gameDate,
+                parkingTime: booking.parkingTime,
+                bookedAt: booking.bookedAt,
+                cancelBy: booking.cancelBy,
+                visitingTeam: booking.visiting_team
+            });
+        }
+        catch (emailError) {
+            console.error("⚠️  Error calling sendBookingNotification:", emailError.message);
+            logger_1.logger.error({
+                message: "Error calling sendBookingNotification",
+                error: emailError.message
+            });
+        }
         return res
             .status(200)
             .json((0, responseWrapper_1.responseWrapper)(true, booking, null));
