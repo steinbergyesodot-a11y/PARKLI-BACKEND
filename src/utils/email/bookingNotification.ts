@@ -24,10 +24,11 @@ interface ownerEmailData {
 
 // Create nodemailer transporter
 const transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE || 'gmail',
+  host: 'smtp.sendgrid.net',
+  port: 587,
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
+    user: 'apikey',
+    pass: process.env.SENDGRID_API_KEY,
   },
 });
 
@@ -101,9 +102,9 @@ function buildBookingEmail(data: emailData): string {
 export async function sendBookingNotification(data: emailData) {
   try {
     // Validate required environment variables
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+    if (!process.env.SENDGRID_API_KEY) {
       logger.warn({
-        message: "Email service not configured. Skipping email notification.",
+        message: "SendGrid API key not configured. Skipping email notification.",
         email: data.email
       });
       return;
@@ -126,7 +127,7 @@ export async function sendBookingNotification(data: emailData) {
 
     // Send email
     const result = await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: 'steinbergyosef@gmail.com',
       to: data.email,
       subject: 'Booking Confirmed - PARKLI',
       html: html,
