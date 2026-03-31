@@ -1,10 +1,8 @@
-import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
 import { logger } from '../logger/logger';
 
-// Set SendGrid API key
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-}
+// Initialize Resend
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 interface emailData {
     firstName: string;
@@ -97,9 +95,9 @@ function buildBookingEmail(data: emailData): string {
 export async function sendBookingNotification(data: emailData) {
   try {
     // Validate required environment variables
-    if (!process.env.SENDGRID_API_KEY) {
+    if (!process.env.RESEND_API_KEY) {
       logger.warn({
-        message: "SendGrid API key not configured. Skipping email notification.",
+        message: "Resend API key not configured. Skipping email notification.",
         email: data.email
       });
       return;
@@ -121,21 +119,25 @@ export async function sendBookingNotification(data: emailData) {
     const html = buildBookingEmail(data);
     console.log("📧 HTML built, now sending email...");
 
-    // Send email via SendGrid API
-    console.log("📧 Calling sgMail.send...");
-    const response = await sgMail.send({
+    // Send email via Resend
+    console.log("📧 Calling resend.emails.send...");
+    const result = await resend.emails.send({
+      from: 'onboarding@resend.dev',
       to: data.email,
-      from: 'steinbergyosef@gmail.com',
       subject: 'Booking Confirmed - PARKLI',
       html: html,
     });
-    console.log("📧 sgMail.send completed with response:", response);
+    console.log("📧 resend.emails.send completed with result:", result);
+
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
 
     console.log("✅ Email sent successfully!");
     logger.info({
       message: "Booking notification sent successfully",
       email: data.email,
-      messageId: response[0].headers['x-message-id']
+      messageId: result.data?.id
     });
 
   } catch (error: any) {
@@ -214,9 +216,9 @@ function buildOwnerBookingEmail(data: ownerEmailData): string {
 export async function sendOwnerBookingNotification(data: ownerEmailData) {
   try {
     // Validate required environment variables
-    if (!process.env.SENDGRID_API_KEY) {
+    if (!process.env.RESEND_API_KEY) {
       logger.warn({
-        message: "SendGrid API key not configured. Skipping owner notification.",
+        message: "Resend API key not configured. Skipping owner notification.",
         ownerEmail: data.ownerEmail
       });
       return;
@@ -237,21 +239,25 @@ export async function sendOwnerBookingNotification(data: ownerEmailData) {
     const html = buildOwnerBookingEmail(data);
     console.log("📧 Owner HTML built, now sending email...");
 
-    // Send email via SendGrid API
-    console.log("📧 Calling sgMail.send for owner...");
-    const response = await sgMail.send({
+    // Send email via Resend
+    console.log("📧 Calling resend.emails.send for owner...");
+    const result = await resend.emails.send({
+      from: 'onboarding@resend.dev',
       to: data.ownerEmail,
-      from: 'steinbergyosef@gmail.com',
       subject: 'New Booking - PARKLI',
       html: html,
     });
-    console.log("📧 sgMail.send for owner completed with response:", response);
+    console.log("📧 resend.emails.send for owner completed with result:", result);
+
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
 
     console.log("✅ Owner notification sent!");
     logger.info({
       message: "Owner booking notification sent successfully",
       ownerEmail: data.ownerEmail,
-      messageId: response[0].headers['x-message-id']
+      messageId: result.data?.id
     });
 
   } catch (error: any) {
