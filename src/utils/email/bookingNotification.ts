@@ -122,7 +122,7 @@ export async function sendBookingNotification(data: emailData) {
     // Send email via Resend
     console.log("📧 Calling resend.emails.send...");
     const result = await resend.emails.send({
-      from: 'onboarding@resend.dev',
+      from: 'noreply@wrigleyparkli.com',
       to: data.email,
       subject: 'Booking Confirmed - PARKLI',
       html: html,
@@ -242,7 +242,7 @@ export async function sendOwnerBookingNotification(data: ownerEmailData) {
     // Send email via Resend
     console.log("📧 Calling resend.emails.send for owner...");
     const result = await resend.emails.send({
-      from: 'onboarding@resend.dev',
+      from: 'noreply@wrigleyparkli.com',
       to: data.ownerEmail,
       subject: 'New Booking - PARKLI',
       html: html,
