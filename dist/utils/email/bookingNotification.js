@@ -1,16 +1,11 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendBookingNotification = sendBookingNotification;
 exports.sendOwnerBookingNotification = sendOwnerBookingNotification;
-const mail_1 = __importDefault(require("@sendgrid/mail"));
+const resend_1 = require("resend");
 const logger_1 = require("../logger/logger");
-// Set SendGrid API key
-if (process.env.SENDGRID_API_KEY) {
-    mail_1.default.setApiKey(process.env.SENDGRID_API_KEY);
-}
+// Initialize Resend
+const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
 // Build HTML email template
 function buildBookingEmail(data) {
     return `
@@ -78,11 +73,12 @@ function buildBookingEmail(data) {
   `;
 }
 async function sendBookingNotification(data) {
+    var _a;
     try {
         // Validate required environment variables
-        if (!process.env.SENDGRID_API_KEY) {
+        if (!process.env.RESEND_API_KEY) {
             logger_1.logger.warn({
-                message: "SendGrid API key not configured. Skipping email notification.",
+                message: "Resend API key not configured. Skipping email notification.",
                 email: data.email
             });
             return;
@@ -101,20 +97,23 @@ async function sendBookingNotification(data) {
         // Build email HTML
         const html = buildBookingEmail(data);
         console.log("📧 HTML built, now sending email...");
-        // Send email via SendGrid API
-        console.log("📧 Calling sgMail.send...");
-        const response = await mail_1.default.send({
+        // Send email via Resend
+        console.log("📧 Calling resend.emails.send...");
+        const result = await resend.emails.send({
+            from: 'noreply@wrigleyparkli.com',
             to: data.email,
-            from: 'steinbergyosef@gmail.com',
             subject: 'Booking Confirmed - PARKLI',
             html: html,
         });
-        console.log("📧 sgMail.send completed with response:", response);
+        console.log("📧 resend.emails.send completed with result:", result);
+        if (result.error) {
+            throw new Error(result.error.message);
+        }
         console.log("✅ Email sent successfully!");
         logger_1.logger.info({
             message: "Booking notification sent successfully",
             email: data.email,
-            messageId: response[0].headers['x-message-id']
+            messageId: (_a = result.data) === null || _a === void 0 ? void 0 : _a.id
         });
     }
     catch (error) {
@@ -189,11 +188,12 @@ function buildOwnerBookingEmail(data) {
   `;
 }
 async function sendOwnerBookingNotification(data) {
+    var _a;
     try {
         // Validate required environment variables
-        if (!process.env.SENDGRID_API_KEY) {
+        if (!process.env.RESEND_API_KEY) {
             logger_1.logger.warn({
-                message: "SendGrid API key not configured. Skipping owner notification.",
+                message: "Resend API key not configured. Skipping owner notification.",
                 ownerEmail: data.ownerEmail
             });
             return;
@@ -211,20 +211,23 @@ async function sendOwnerBookingNotification(data) {
         // Build email HTML
         const html = buildOwnerBookingEmail(data);
         console.log("📧 Owner HTML built, now sending email...");
-        // Send email via SendGrid API
-        console.log("📧 Calling sgMail.send for owner...");
-        const response = await mail_1.default.send({
+        // Send email via Resend
+        console.log("📧 Calling resend.emails.send for owner...");
+        const result = await resend.emails.send({
+            from: 'noreply@wrigleyparkli.com',
             to: data.ownerEmail,
-            from: 'steinbergyosef@gmail.com',
             subject: 'New Booking - PARKLI',
             html: html,
         });
-        console.log("📧 sgMail.send for owner completed with response:", response);
+        console.log("📧 resend.emails.send for owner completed with result:", result);
+        if (result.error) {
+            throw new Error(result.error.message);
+        }
         console.log("✅ Owner notification sent!");
         logger_1.logger.info({
             message: "Owner booking notification sent successfully",
             ownerEmail: data.ownerEmail,
-            messageId: response[0].headers['x-message-id']
+            messageId: (_a = result.data) === null || _a === void 0 ? void 0 : _a.id
         });
     }
     catch (error) {
