@@ -29,7 +29,8 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://parkli-front.vercel.app"
+      "https://parkli-front.vercel.app",
+      "https://wrigleyparkli.com"
     ],
     credentials: true
   })
