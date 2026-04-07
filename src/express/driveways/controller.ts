@@ -68,7 +68,7 @@ export async function addDriveway(req: Request, res: Response, next: NextFunctio
     address: clean(data.address),
     city: clean(data.city),
     state: clean(data.state),
-    // zipcode: clean(data.zipcode),
+    zipcode: clean(data.zipcode),
     latitude: data.latitude,
     longitude: data.longitude,
     walk: data.walk,
@@ -120,8 +120,8 @@ export async function addDriveway(req: Request, res: Response, next: NextFunctio
       await user.save();
     }
 
-    const returnUrl = `https://parkli-front.vercel.app/Onboard-Complete`;
-    const refreshUrl = `https://parkli-front.vercel.app/Onboard-Retry`;
+    const returnUrl = `${process.env.FRONTEND_URL}/Onboard-Complete`;
+    const refreshUrl = `${process.env.FRONTEND_URL}/Onboard-Retry`;
 
     const onboardingLink = await stripe.accountLinks.create({
       account: user.stripeAccountId,
