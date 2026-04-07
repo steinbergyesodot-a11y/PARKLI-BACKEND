@@ -14,7 +14,7 @@ exports.drivewaySchemaZod = zod_1.z.object({
     address: zod_1.z.string().min(5).max(200).trim(),
     city: zod_1.z.string().min(1).max(100).trim(),
     state: zod_1.z.string().min(1).max(100).trim(),
-    zipcode: zod_1.z.string().min(1).max(20).trim(),
+    // zipcode: z.string().min(1).max(20).trim(),
     latitude: zod_1.z.preprocess((v) => Number(v), zod_1.z.number()),
     longitude: zod_1.z.preprocess((v) => Number(v), zod_1.z.number()),
     description: zod_1.z.string().min(0).max(1000).trim().optional(),

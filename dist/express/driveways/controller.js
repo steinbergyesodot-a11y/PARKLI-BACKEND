@@ -72,7 +72,7 @@ async function addDriveway(req, res, next) {
             address: (0, sanitizeHTML_1.clean)(data.address),
             city: (0, sanitizeHTML_1.clean)(data.city),
             state: (0, sanitizeHTML_1.clean)(data.state),
-            zipcode: (0, sanitizeHTML_1.clean)(data.zipcode),
+            // zipcode: clean(data.zipcode),
             latitude: data.latitude,
             longitude: data.longitude,
             walk: data.walk,

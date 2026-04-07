@@ -68,7 +68,7 @@ export async function addDriveway(req: Request, res: Response, next: NextFunctio
     address: clean(data.address),
     city: clean(data.city),
     state: clean(data.state),
-    zipcode: clean(data.zipcode),
+    // zipcode: clean(data.zipcode),
     latitude: data.latitude,
     longitude: data.longitude,
     walk: data.walk,
