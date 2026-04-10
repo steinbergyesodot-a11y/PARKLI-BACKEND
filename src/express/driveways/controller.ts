@@ -129,6 +129,8 @@ export async function addDriveway(req: Request, res: Response, next: NextFunctio
       return_url: returnUrl,
       type: "account_onboarding"
     });
+    user.stripeOnboardingUrl = onboardingLink.url
+    await user.save();
 
     logger.info({
       message: "Driveway created successfully",

@@ -18,4 +18,6 @@ export interface IUser {
   failedAttempts?: Number;
   lastFailedAttempt?: Date;
   lockoutUntil?: Date;
+  stripeOnboardingUrl?: string;
+  stripeOnboardingUrlExpires?: Date;
 }

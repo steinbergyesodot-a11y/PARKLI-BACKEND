@@ -1,8 +1,10 @@
 import { drivewayModel } from "./model"
+import { userModel } from "../users/model";
 import axios from 'axios';
 import { getCubsHomeGames } from "../../utils/mlbAPI";
 import { IDriveway,IGame } from "./interfce";
 import { GameInfo } from "../../utils/mlbAPI";
+import { logger } from "../../utils/logger/logger";
 
 
 
@@ -38,8 +40,17 @@ export class DrivewayManager{
 
 
     static async getAllDriveways(){
-        const driveways = await drivewayModel.find()
-        return driveways
+        const driveways = await drivewayModel.find();
+        
+        const verifiedDriveways = [];
+        for (const driveway of driveways) {
+            const user = await userModel.findById(driveway.ownerId);
+            if (user && user.isStripeVerified) {
+                verifiedDriveways.push(driveway);
+            }
+        }
+        
+        return verifiedDriveways;
     }
 
    static async getGamesByDrivewayId(drivewayId:string) {

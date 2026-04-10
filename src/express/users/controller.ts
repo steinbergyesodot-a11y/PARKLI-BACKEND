@@ -468,3 +468,61 @@ export async function checkStripeStatus(req:Request, res:Response, next:NextFunc
   }
 }
 
+
+export async function checkStripeVerification(req: Request, res: Response, next: NextFunction) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+  try {
+    const { userId } = req.params;
+    const user = await userModel.findById(userId);
+
+    if (!user || !user.stripeAccountId) {
+      return res.status(200).json(
+        responseWrapper<{ isStripeVerified: boolean, onboardingUrl?: string }>(
+          true, 
+          { isStripeVerified: false }
+        )
+      );
+    }
+
+    const account = await stripe.accounts.retrieve(user.stripeAccountId);
+
+    const isVerified =
+      account.details_submitted &&
+      account.charges_enabled &&
+      account.payouts_enabled;
+
+    if (isVerified !== user.isStripeVerified) {
+      user.isStripeVerified = isVerified;
+      await user.save();
+    }
+
+    // If not verified, check if onboarding URL is expired and regenerate if needed
+    if (!isVerified) {
+      if (!user.stripeOnboardingUrl || (user.stripeOnboardingUrlExpires && new Date() > user.stripeOnboardingUrlExpires)) {
+        const returnUrl = `${process.env.FRONTEND_URL}/Onboard-Complete`;
+        const refreshUrl = `${process.env.FRONTEND_URL}/Onboard-Retry`;
+        
+        const onboardingLink = await stripe.accountLinks.create({
+          account: user.stripeAccountId,
+          refresh_url: refreshUrl,
+          return_url: returnUrl,
+          type: "account_onboarding"
+        });
+        
+        user.stripeOnboardingUrl = onboardingLink.url;
+        user.stripeOnboardingUrlExpires = new Date(onboardingLink.expires_at * 1000);
+        await user.save();
+      }
+    }
+
+    return res.status(200).json(
+      responseWrapper<{ isStripeVerified: boolean, onboardingUrl?: string }>(
+        true, 
+        { isStripeVerified: isVerified, onboardingUrl: !isVerified ? user.stripeOnboardingUrl : undefined }
+      )
+    );
+  } catch (err) {
+    next(err);
+  }
+}

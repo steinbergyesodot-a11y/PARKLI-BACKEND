@@ -46,7 +46,9 @@ const userSchema = new mongoose.Schema<IUser>({
     authProvider: { type: String, default: "local" },
     failedAttempts: { type: Number, default: 0 , required: false},
     lastFailedAttempt: { type: Date, default: null, required: false },
-    lockoutUntil: { type: Date, default: null, required: false }
+    lockoutUntil: { type: Date, default: null, required: false },
+    stripeOnboardingUrl: {type: String, required: false},
+    stripeOnboardingUrlExpires: {type: Date, required: false}
 
   
    
