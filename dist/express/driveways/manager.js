@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DrivewayManager = void 0;
 const model_1 = require("./model");
+const model_2 = require("../users/model");
 const mlbAPI_1 = require("../../utils/mlbAPI");
 class DrivewayManager {
     static async createDriveway(driveway) {
@@ -23,7 +24,14 @@ class DrivewayManager {
     }
     static async getAllDriveways() {
         const driveways = await model_1.drivewayModel.find();
-        return driveways;
+        const verifiedDriveways = [];
+        for (const driveway of driveways) {
+            const user = await model_2.userModel.findById(driveway.ownerId);
+            if (user && user.isStripeVerified) {
+                verifiedDriveways.push(driveway);
+            }
+        }
+        return verifiedDriveways;
     }
     static async getGamesByDrivewayId(drivewayId) {
         const driveway = await model_1.drivewayModel.findById(drivewayId);

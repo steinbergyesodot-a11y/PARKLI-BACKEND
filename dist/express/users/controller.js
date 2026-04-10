@@ -13,6 +13,7 @@ exports.updateEmail = updateEmail;
 exports.Login = Login;
 exports.googleLogin = googleLogin;
 exports.checkStripeStatus = checkStripeStatus;
+exports.checkStripeVerification = checkStripeVerification;
 const manager_1 = require("./manager");
 const mongoose_1 = __importDefault(require("mongoose"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
@@ -378,6 +379,44 @@ async function checkStripeStatus(req, res, next) {
             await user.save();
         }
         return res.status(200).json((0, responseWrapper_1.responseWrapper)(true, { verified, isStripeVerified: user.isStripeVerified }));
+    }
+    catch (err) {
+        next(err);
+    }
+}
+async function checkStripeVerification(req, res, next) {
+    const stripe = new stripe_1.default(process.env.STRIPE_SECRET_KEY);
+    try {
+        const { userId } = req.params;
+        const user = await model_1.userModel.findById(userId);
+        if (!user || !user.stripeAccountId) {
+            return res.status(200).json((0, responseWrapper_1.responseWrapper)(true, { isStripeVerified: false }));
+        }
+        const account = await stripe.accounts.retrieve(user.stripeAccountId);
+        const isVerified = account.details_submitted &&
+            account.charges_enabled &&
+            account.payouts_enabled;
+        if (isVerified !== user.isStripeVerified) {
+            user.isStripeVerified = isVerified;
+            await user.save();
+        }
+        // If not verified, check if onboarding URL is expired and regenerate if needed
+        if (!isVerified) {
+            if (!user.stripeOnboardingUrl || (user.stripeOnboardingUrlExpires && new Date() > user.stripeOnboardingUrlExpires)) {
+                const returnUrl = `${process.env.FRONTEND_URL}/Onboard-Complete`;
+                const refreshUrl = `${process.env.FRONTEND_URL}/Onboard-Retry`;
+                const onboardingLink = await stripe.accountLinks.create({
+                    account: user.stripeAccountId,
+                    refresh_url: refreshUrl,
+                    return_url: returnUrl,
+                    type: "account_onboarding"
+                });
+                user.stripeOnboardingUrl = onboardingLink.url;
+                user.stripeOnboardingUrlExpires = new Date(onboardingLink.expires_at * 1000);
+                await user.save();
+            }
+        }
+        return res.status(200).json((0, responseWrapper_1.responseWrapper)(true, { isStripeVerified: isVerified, onboardingUrl: !isVerified ? user.stripeOnboardingUrl : undefined }));
     }
     catch (err) {
         next(err);

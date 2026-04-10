@@ -120,6 +120,8 @@ async function addDriveway(req, res, next) {
             return_url: returnUrl,
             type: "account_onboarding"
         });
+        user.stripeOnboardingUrl = onboardingLink.url;
+        await user.save();
         logger_1.logger.info({
             message: "Driveway created successfully",
             drivewayId: newDriveway._id,
