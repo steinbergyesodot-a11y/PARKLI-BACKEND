@@ -7,11 +7,13 @@ import { OAuth2Client } from "google-auth-library";
 import { userModel } from './model';
 import Stripe from 'stripe';
 import { UserType } from './interface';
-import { userSchemaZod,loginSchemaZod } from './validation';
+import { userSchemaZod,loginSchemaZod, resetPasswordSchemaZod } from './validation';
 import { clean } from '../../utils/sanitizeHTML';
 import { logger } from '../../utils/logger/logger';
 import { responseWrapper,ApiResponse } from '../../utils/responseWrapper';
 import { json } from 'zod';
+import crypto from 'crypto'
+import { Resend } from 'resend';
 
 
 export async function addUser(req: Request, res: Response, next: NextFunction) {
@@ -437,6 +439,119 @@ export async function googleLogin(req:Request,res:Response,next:NextFunction) {
     next(error);
   }
 }
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+export async function forgotPassword(req:Request, res:Response, next:NextFunction){
+   const { email } = req.body;
+
+   const genericResponse = {
+    success: true,
+    message: "If an account exists, a reset link has been sent."
+  };
+
+  try{
+    const user = await userModel.findOne({email})
+     if (!user) {
+      return res.status(200).json(genericResponse);
+    }
+      const resetToken = crypto.randomBytes(32).toString("hex");
+         const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+      user.passwordResetToken = hashedToken;
+      user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+      await user.save();
+
+       const resetURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+        await resend.emails.send({
+      from: "noreply@wrigleyparkli.com",
+      to: email,
+      subject: "Reset your password",
+      html: `
+        <p>Hello,</p>
+        <p>You requested a password reset. Click the link below:</p>
+        <p><a href="${resetURL}">Reset Password</a></p>
+        <p>This link expires in 10 minutes.</p>
+        <p>If you did not request this, ignore this email.</p>
+      `
+    });
+
+      return res.status(200).json(genericResponse);
+
+  }catch(error){
+      console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+
+}
+
+export async function resetPassword(req:Request, res:Response, next:NextFunction){
+
+  const { token } = req.params;
+  const { password } = req.body;
+
+  try {
+    // Validate password
+    const validation = resetPasswordSchemaZod.safeParse({ password });
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        message: validation.error.issues[0].message
+      });
+    }
+
+    // 1. Hash the token from the URL
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token as string)
+      .digest("hex");
+
+    // 2. Find user with matching token + valid expiration
+    const user = await userModel.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Token is invalid or has expired"
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+
+    // 3. Update password
+    user.password = hashedPassword;
+
+    // 4. Delete reset token fields
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    // 5. Save user
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password has been reset successfully"
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+}
+
 
 
 export async function checkStripeStatus(req:Request, res:Response, next:NextFunction) {

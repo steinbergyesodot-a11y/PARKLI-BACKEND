@@ -1,6 +1,6 @@
 import express from 'express'
 import { Router } from 'express'
-import { addUser, getAllUsers, getUserById, checkStripeVerification,Login,googleLogin,updateFirstName,updateLastName,updateEmail,checkStripeStatus} from './controller';
+import { addUser, getAllUsers, getUserById, checkStripeVerification,Login,googleLogin,updateFirstName,updateLastName,updateEmail,checkStripeStatus,forgotPassword, resetPassword} from './controller';
 import { authenticateToken } from '../../utils/middleware/authenticateToken';
 import { authorize } from '../../utils/middleware/authorize';
 import { requireUserOwnership } from '../../utils/middleware/ownershipMiddleware';
@@ -28,6 +28,10 @@ usersRouter.post('/google-login',googleLogin)
 usersRouter.get('/stripe/check-status',authenticateToken,checkStripeStatus)
 
 usersRouter.get('/:userId/stripe-verification', checkStripeVerification);
+
+usersRouter.post('/forgotPassword',forgotPassword)
+
+usersRouter.post('/resetPassword/:token',resetPassword)
 
 
 

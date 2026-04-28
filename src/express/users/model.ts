@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose'
 import { IUser,UserType } from './interface';
+import { number } from 'zod';
 
 
 const userSchema = new mongoose.Schema<IUser>({
@@ -48,7 +49,9 @@ const userSchema = new mongoose.Schema<IUser>({
     lastFailedAttempt: { type: Date, default: null, required: false },
     lockoutUntil: { type: Date, default: null, required: false },
     stripeOnboardingUrl: {type: String, required: false},
-    stripeOnboardingUrlExpires: {type: Date, required: false}
+    stripeOnboardingUrlExpires: {type: Date, required: false},
+    passwordResetToken: {type: String, required: false},
+    passwordResetExpires: {type: Number,required: false}
 
   
    

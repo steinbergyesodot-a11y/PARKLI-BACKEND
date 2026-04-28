@@ -20,4 +20,6 @@ export interface IUser {
   lockoutUntil?: Date;
   stripeOnboardingUrl?: string;
   stripeOnboardingUrlExpires?: Date;
+  passwordResetToken?:string;
+  passwordResetExpires?: number;
 }

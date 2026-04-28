@@ -13,3 +13,7 @@ export const loginSchemaZod = z.object({
   password: z.string().min(1, "Password is required"),
 }).strict();
 
+export const resetPasswordSchemaZod = z.object({
+  password: z.string().min(8, "Password must be at least 8 characters"),
+}).strict();
+
