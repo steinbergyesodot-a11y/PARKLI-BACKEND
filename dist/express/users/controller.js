@@ -12,6 +12,8 @@ exports.updateLastName = updateLastName;
 exports.updateEmail = updateEmail;
 exports.Login = Login;
 exports.googleLogin = googleLogin;
+exports.forgotPassword = forgotPassword;
+exports.resetPassword = resetPassword;
 exports.checkStripeStatus = checkStripeStatus;
 exports.checkStripeVerification = checkStripeVerification;
 const manager_1 = require("./manager");
@@ -26,6 +28,8 @@ const validation_1 = require("./validation");
 const sanitizeHTML_1 = require("../../utils/sanitizeHTML");
 const logger_1 = require("../../utils/logger/logger");
 const responseWrapper_1 = require("../../utils/responseWrapper");
+const crypto_1 = __importDefault(require("crypto"));
+const resend_1 = require("resend");
 async function addUser(req, res, next) {
     logger_1.logger.info({
         message: "addUser called",
@@ -360,6 +364,98 @@ async function googleLogin(req, res, next) {
     }
     catch (error) {
         next(error);
+    }
+}
+const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
+async function forgotPassword(req, res, next) {
+    const { email } = req.body;
+    const genericResponse = {
+        success: true,
+        message: "If an account exists, a reset link has been sent."
+    };
+    try {
+        const user = await model_1.userModel.findOne({ email });
+        if (!user) {
+            return res.status(200).json(genericResponse);
+        }
+        const resetToken = crypto_1.default.randomBytes(32).toString("hex");
+        const hashedToken = crypto_1.default
+            .createHash("sha256")
+            .update(resetToken)
+            .digest("hex");
+        user.passwordResetToken = hashedToken;
+        user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+        await user.save();
+        const resetURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+        await resend.emails.send({
+            from: "noreply@wrigleyparkli.com",
+            to: email,
+            subject: "Reset your password",
+            html: `
+        <p>Hello,</p>
+        <p>You requested a password reset. Click the link below:</p>
+        <p><a href="${resetURL}">Reset Password</a></p>
+        <p>This link expires in 10 minutes.</p>
+        <p>If you did not request this, ignore this email.</p>
+      `
+        });
+        return res.status(200).json(genericResponse);
+    }
+    catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
+    }
+}
+async function resetPassword(req, res, next) {
+    const { token } = req.params;
+    const { password } = req.body;
+    try {
+        // Validate password
+        const validation = validation_1.resetPasswordSchemaZod.safeParse({ password });
+        if (!validation.success) {
+            return res.status(400).json({
+                success: false,
+                message: validation.error.issues[0].message
+            });
+        }
+        // 1. Hash the token from the URL
+        const hashedToken = crypto_1.default
+            .createHash("sha256")
+            .update(token)
+            .digest("hex");
+        // 2. Find user with matching token + valid expiration
+        const user = await model_1.userModel.findOne({
+            passwordResetToken: hashedToken,
+            passwordResetExpires: { $gt: Date.now() }
+        });
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: "Token is invalid or has expired"
+            });
+        }
+        const hashedPassword = await bcrypt_1.default.hash(password, 12);
+        // 3. Update password
+        user.password = hashedPassword;
+        // 4. Delete reset token fields
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        // 5. Save user
+        await user.save();
+        return res.status(200).json({
+            success: true,
+            message: "Password has been reset successfully"
+        });
+    }
+    catch (err) {
+        console.error(err);
+        return res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
     }
 }
 async function checkStripeStatus(req, res, next) {

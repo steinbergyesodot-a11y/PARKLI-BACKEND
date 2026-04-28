@@ -20,4 +20,6 @@ usersRouter.post('/login', rateLimit_1.loginRateLimiter, controller_1.Login);
 usersRouter.post('/google-login', controller_1.googleLogin);
 usersRouter.get('/stripe/check-status', authenticateToken_1.authenticateToken, controller_1.checkStripeStatus);
 usersRouter.get('/:userId/stripe-verification', controller_1.checkStripeVerification);
+usersRouter.post('/forgotPassword', controller_1.forgotPassword);
+usersRouter.post('/resetPassword/:token', controller_1.resetPassword);
 exports.default = usersRouter;

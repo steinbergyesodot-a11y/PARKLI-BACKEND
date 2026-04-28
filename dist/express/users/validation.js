@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loginSchemaZod = exports.userSchemaZod = void 0;
+exports.resetPasswordSchemaZod = exports.loginSchemaZod = exports.userSchemaZod = void 0;
 const zod_1 = require("zod");
 exports.userSchemaZod = zod_1.z.object({
     firstName: zod_1.z.string().min(1, "First name is required").max(50).trim(),
@@ -11,4 +11,7 @@ exports.userSchemaZod = zod_1.z.object({
 exports.loginSchemaZod = zod_1.z.object({
     email: zod_1.z.string().email("Invalid email format").trim().toLowerCase(),
     password: zod_1.z.string().min(1, "Password is required"),
+}).strict();
+exports.resetPasswordSchemaZod = zod_1.z.object({
+    password: zod_1.z.string().min(8, "Password must be at least 8 characters"),
 }).strict();
