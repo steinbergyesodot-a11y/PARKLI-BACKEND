@@ -5,11 +5,18 @@ import { authenticateToken } from '../../utils/middleware/authenticateToken';
 import { authorize } from '../../utils/middleware/authorize';
 import { requireUserOwnership } from '../../utils/middleware/ownershipMiddleware';
 import { loginRateLimiter } from '../../utils/middleware/rateLimit';
+import { signupRateLimitByIP } from '../../utils/middleware/signupRateLimit';
+import { verifyTurnstile } from '../../utils/middleware/verifyTrunstile';
 
 const usersRouter = express.Router();
 
 
-usersRouter.post("/addUser",addUser)
+usersRouter.post(
+    "/addUser",
+    verifyTurnstile,
+    signupRateLimitByIP(5, 60 * 60 * 1000),
+    addUser
+)
 
 usersRouter.get("/:userId",authenticateToken,requireUserOwnership,getUserById)
 
