@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.userModel = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
+const interface_1 = require("./interface");
 const userSchema = new mongoose_1.default.Schema({
     firstName: {
         type: String,
@@ -23,6 +24,12 @@ const userSchema = new mongoose_1.default.Schema({
         required: false,
         min: 5
     },
+    userType: {
+        type: String,
+        enum: Object.values(interface_1.UserType),
+        default: interface_1.UserType.Guest,
+        required: true
+    },
     roles: {
         type: [String],
         enum: ["renter", "host"],
@@ -40,6 +47,13 @@ const userSchema = new mongoose_1.default.Schema({
         type: [String],
     },
     googleId: String,
-    authProvider: { type: String, default: "local" }
+    authProvider: { type: String, default: "local" },
+    failedAttempts: { type: Number, default: 0, required: false },
+    lastFailedAttempt: { type: Date, default: null, required: false },
+    lockoutUntil: { type: Date, default: null, required: false },
+    stripeOnboardingUrl: { type: String, required: false },
+    stripeOnboardingUrlExpires: { type: Date, required: false },
+    passwordResetToken: { type: String, required: false },
+    passwordResetExpires: { type: Number, required: false }
 });
 exports.userModel = mongoose_1.default.model('user', userSchema);

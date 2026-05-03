@@ -1,6 +1,12 @@
+export enum UserType{
+  Guest = "Guest",
+  Admin = "Admin"
+}
+
 export interface IUser {
   firstName: string;
-  lastName?: string;     
+  lastName?: string;  
+  userType: UserType;   
   email: string;
   password?: string;      
   roles: ("renter" | "host")[];
@@ -9,4 +15,11 @@ export interface IUser {
   drivewayIds?: string[];
   googleId?: string;
   authProvider?: string;
+  failedAttempts?: Number;
+  lastFailedAttempt?: Date;
+  lockoutUntil?: Date;
+  stripeOnboardingUrl?: string;
+  stripeOnboardingUrlExpires?: Date;
+  passwordResetToken?:string;
+  passwordResetExpires?: number;
 }

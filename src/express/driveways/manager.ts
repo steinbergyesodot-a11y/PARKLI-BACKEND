@@ -1,8 +1,10 @@
 import { drivewayModel } from "./model"
+import { userModel } from "../users/model";
 import axios from 'axios';
-import { getRedSoxHomeGamesNextMonth } from "../../utils/mlbAPI";
+import { getCubsHomeGames } from "../../utils/mlbAPI";
 import { IDriveway,IGame } from "./interfce";
 import { GameInfo } from "../../utils/mlbAPI";
+import { logger } from "../../utils/logger/logger";
 
 
 
@@ -10,7 +12,7 @@ import { GameInfo } from "../../utils/mlbAPI";
 export class DrivewayManager{
     static async createDriveway(driveway : IDriveway){
 
-       const games: GameInfo[] = await getRedSoxHomeGamesNextMonth()
+       const games: GameInfo[] = await getCubsHomeGames()
 
        return await drivewayModel.create({
              ...driveway,
@@ -19,18 +21,40 @@ export class DrivewayManager{
         
     } 
 
+    static async updateDriveway(drivewayId: string, driveway: Partial<IDriveway>) {
+       const games: GameInfo[] = await getCubsHomeGames();
+
+      return await drivewayModel.findByIdAndUpdate(
+      drivewayId,
+     {
+      ...driveway,
+      games: games
+     },
+    { new: true }
+  );
+}
+
     static async findDrivewayById(drivewayId : string){
         return await drivewayModel.findById(drivewayId)
     }
 
 
     static async getAllDriveways(){
-        const driveways = await drivewayModel.find()
-        return driveways
+        const driveways = await drivewayModel.find();
+        
+        const verifiedDriveways = [];
+        for (const driveway of driveways) {
+            const user = await userModel.findById(driveway.ownerId);
+            if (user && user.isStripeVerified) {
+                verifiedDriveways.push(driveway);
+            }
+        }
+        
+        return verifiedDriveways;
     }
 
-   static async getGamesByOwnerId(ownerId:string) {
-  const driveway = await drivewayModel.findOne({ ownerId });
+   static async getGamesByDrivewayId(drivewayId:string) {
+  const driveway = await drivewayModel.findById(drivewayId);
   return driveway?.games || [];
 }
 
@@ -86,7 +110,6 @@ export class DrivewayManager{
           if (!driveway) {
             throw new Error("Driveway not found");
           }
-          console.log("Driveway ID:", drivewayId); console.log("Incoming gameDate:", gameDate); console.log("Driveway.games:", driveway.games);
 
           if (!driveway.games || driveway.games.length === 0) {
             throw new Error("No games found for this driveway");

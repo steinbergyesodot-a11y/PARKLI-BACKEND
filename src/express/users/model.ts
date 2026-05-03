@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose'
-import { IUser } from './interface';
+import { IUser,UserType } from './interface';
+import { number } from 'zod';
 
 
 const userSchema = new mongoose.Schema<IUser>({
@@ -20,7 +21,13 @@ const userSchema = new mongoose.Schema<IUser>({
         required: false,
         min: 5
     },
-    roles:{
+    userType: { 
+        type: String,
+         enum: Object.values(UserType), 
+         default: UserType.Guest,
+        required: true 
+    },
+     roles:{
         type:[String],
         enum: ["renter", "host"],
         default: ["renter"]
@@ -37,7 +44,15 @@ const userSchema = new mongoose.Schema<IUser>({
         type: [String],
     },
     googleId: String,
-    authProvider: { type: String, default: "local" }
+    authProvider: { type: String, default: "local" },
+    failedAttempts: { type: Number, default: 0 , required: false},
+    lastFailedAttempt: { type: Date, default: null, required: false },
+    lockoutUntil: { type: Date, default: null, required: false },
+    stripeOnboardingUrl: {type: String, required: false},
+    stripeOnboardingUrlExpires: {type: Date, required: false},
+    passwordResetToken: {type: String, required: false},
+    passwordResetExpires: {type: Number,required: false}
+
   
    
 })

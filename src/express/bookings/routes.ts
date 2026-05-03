@@ -1,29 +1,22 @@
 import express from 'express'
 import {Router} from 'express'
-import { addBooking, getAllBookings, getBookingByRenterId, updateBookingById, deleteBookingById,checkIfUserHasBooking, createPaymentIntent, cancelBooking } from './controller';
-
+import { addBooking, getBookingsByRenterId,checkIfUserHasBooking, createPaymentIntent, cancelBooking } from './controller';
+import { authenticateToken } from '../../utils/middleware/authenticateToken';
+import { requireUserOwnership,requireDrivewayOwnership, requireBookingOwnership } from '../../utils/middleware/ownershipMiddleware';
+import { bookingRateLimit } from '../../utils/middleware/rateLimit';
 
 
 const bookingRouter = express.Router();
 
+bookingRouter.post('/',authenticateToken,bookingRateLimit,addBooking)
 
+bookingRouter.post('/createPaymentIntent',authenticateToken,createPaymentIntent) 
 
+bookingRouter.get('/:userId',authenticateToken,getBookingsByRenterId)
 
-bookingRouter.post('/',addBooking)
+bookingRouter.get('/checkIfUserHasBookings/:userId',authenticateToken,requireUserOwnership,checkIfUserHasBooking)
 
-bookingRouter.post('/createPaymentIntent',createPaymentIntent)
-
-bookingRouter.get('/:renterId',getBookingByRenterId)
-
-bookingRouter.get('/checkIfUserHasBookings/:userId',checkIfUserHasBooking)
-
-bookingRouter.get('/',getAllBookings)
-
-bookingRouter.put('/:bookingId',updateBookingById)
-
-bookingRouter.delete('/:bookingId',deleteBookingById)
-
-bookingRouter.post('/cancelBooking',cancelBooking)
+bookingRouter.post('/cancelBooking',authenticateToken,requireBookingOwnership,cancelBooking)      // doesnt follow responseWrapper
 
 
 

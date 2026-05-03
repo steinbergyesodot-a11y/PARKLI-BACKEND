@@ -5,12 +5,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const controller_1 = require("./controller");
+const authenticateToken_1 = require("../../utils/middleware/authenticateToken");
+const ownershipMiddleware_1 = require("../../utils/middleware/ownershipMiddleware");
+const rateLimit_1 = require("../../utils/middleware/rateLimit");
 const bookingRouter = express_1.default.Router();
-bookingRouter.post('/', controller_1.addBooking);
-bookingRouter.post('/createPaymentIntent', controller_1.createPaymentIntent);
-bookingRouter.get('/:renterId', controller_1.getBookingByRenterId);
-bookingRouter.get('/checkIfUserHasBookings/:userId', controller_1.checkIfUserHasBooking);
-bookingRouter.get('/', controller_1.getAllBookings);
-bookingRouter.put('/:bookingId', controller_1.updateBookingById);
-bookingRouter.delete('/:bookingId', controller_1.deleteBookingById);
+bookingRouter.post('/', authenticateToken_1.authenticateToken, rateLimit_1.bookingRateLimit, controller_1.addBooking);
+bookingRouter.post('/createPaymentIntent', authenticateToken_1.authenticateToken, controller_1.createPaymentIntent);
+bookingRouter.get('/:userId', authenticateToken_1.authenticateToken, controller_1.getBookingsByRenterId);
+bookingRouter.get('/checkIfUserHasBookings/:userId', authenticateToken_1.authenticateToken, ownershipMiddleware_1.requireUserOwnership, controller_1.checkIfUserHasBooking);
+bookingRouter.post('/cancelBooking', authenticateToken_1.authenticateToken, ownershipMiddleware_1.requireBookingOwnership, controller_1.cancelBooking); // doesnt follow responseWrapper
 exports.default = bookingRouter;

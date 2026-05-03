@@ -38,6 +38,7 @@ const mongoose_1 = __importStar(require("mongoose"));
 const GameSchema = new mongoose_1.Schema({
     visiting_team: { type: String, required: true },
     game_time: { type: String, required: true },
+    parkingBegins: { type: String, required: true },
     date: { type: String, required: true },
     booked: { type: Boolean, required: false },
     blocked: { type: Boolean, required: true, default: false }
@@ -50,6 +51,26 @@ const drivewaySchema = new mongoose_1.default.Schema({
     },
     address: {
         type: String,
+        required: true
+    },
+    city: {
+        type: String,
+        required: true
+    },
+    state: {
+        type: String,
+        required: true
+    },
+    zipcode: {
+        type: String,
+        required: false
+    },
+    latitude: {
+        type: Number,
+        required: true
+    },
+    longitude: {
+        type: Number,
         required: true
     },
     name: {
@@ -74,9 +95,20 @@ const drivewaySchema = new mongoose_1.default.Schema({
     rules: {
         type: [String]
     },
+    isStripeVerified: {
+        type: Boolean,
+        default: false
+    },
     games: {
         type: [GameSchema],
         default: []
     }
 });
+// Virtual field for publicDisplay
+drivewaySchema.virtual('publicDisplay').get(function () {
+    return `${this.city}, ${this.state} ${this.zipcode}`;
+});
+// Include virtuals in JSON output
+drivewaySchema.set('toJSON', { virtuals: true });
+drivewaySchema.set('toObject', { virtuals: true });
 exports.drivewayModel = mongoose_1.default.model('driveway', drivewaySchema);

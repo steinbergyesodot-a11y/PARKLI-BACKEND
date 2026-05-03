@@ -6,13 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BookingManager = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const model_1 = require("./model");
+const logger_1 = require("../../utils/logger/logger");
 class BookingManager {
     static async createBooking(booking) {
         return model_1.BookingModel.create(booking);
     }
-    // static async findDrivewayById(drivewayId : string){
-    //     return await BookingModel.findById(drivewayId)
-    // }
     static async getBookingsByRenterId(renterId) {
         try {
             const renterObjectId = new mongoose_1.default.Types.ObjectId(renterId);
@@ -20,7 +18,7 @@ class BookingManager {
             return bookings;
         }
         catch (error) {
-            console.error("Error fetching bookings:", error);
+            logger_1.logger.error("Error fetching bookings:", error);
             throw error;
         }
     }

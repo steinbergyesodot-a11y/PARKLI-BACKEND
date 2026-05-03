@@ -1,81 +1,124 @@
 import { Request, Response, NextFunction } from "express";
+import { ZodError } from "zod";
+import { responseWrapper } from "../responseWrapper";
+
+
 
 function errorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
 
-    // -------------------------
-    // 400 — BAD REQUEST
-    // -------------------------
-    const badRequestErrors = [
-        "Missing user ID",
-        "Missing renter ID",
-        "Missing booking ID",
-        "Missing driveway ID",
-        "Missing owner ID",
-        "Missing parameters",
-        "missing parameters",              // ⭐ added
-        "You're missing parameters",
-        "missing user first name",
-        "missing access token",
-        "Invalid renterId format",
-        "Invalid bookingId format",
-        "Invalid userId format",
-        "Invalid ownerId format",
-        "Invalid drivewayId format",
-        "Invalid rules format",
-        "invalid ids",
-        "invalid date or time format",
-        "Cancellation window has passed"   // ⭐ added
-    ];
+  // -------------------------
+  // 400 — ZOD VALIDATION ERROR
+  // -------------------------
+  if (err instanceof ZodError) {
+    return res.status(400).json(
+      responseWrapper(false, null, "Validation failed")
+    );
+  }
 
-    if (badRequestErrors.includes(err.message)) {
-        return res.status(400).json({ error: err.message });
-    }
+  // -------------------------
+  // 400 — BAD REQUEST ERRORS
+  // -------------------------
+  const badRequestErrors = [
+    "Missing user ID",
+    "Missing renter ID",
+    "Missing booking ID",
+    "Missing driveway ID",
+    "Missing owner ID",
+    "Missing parameters",
+    "missing parameters",
+    "You're missing parameters",
+    "missing user first name",
+    "missing access token",
+    "Invalid renterId format",
+    "Invalid bookingId format",
+    "Invalid userId format",
+    "Invalid ownerId format",
+    "Invalid drivewayId format",
+    "Invalid rules format",
+    "Invalid ids",
+    "Invalid first name",
+    "Invalid last name",
+    "Invalid input",
+    "Invalid email format",
+    "invalid date or time format",
+    "Password must be at least 8 characters",
+    "Roles must be an array",
+    "Cancellation window has passed",
+    "Email already in use",
+    "Unable to create account",
+    "At least one image is required",
+    "You can upload a maximum of 5 images",
+    "Invalid file type",
+    "Invalid file extension",
+    "File too large"
+  ];
 
-    // -------------------------
-    // 401 — UNAUTHORIZED
-    // -------------------------
-    if (err.message === "Email or password invalid!") {
-        return res.status(401).json({
-            error: "Email or password you entered aren't correct"
-        });
-    }
+  if (badRequestErrors.includes(err.message)) {
+    return res.status(400).json(
+      responseWrapper(false, null, err.message)
+    );
+  }
 
-    // -------------------------
-    // 404 — NOT FOUND
-    // -------------------------
-    const notFoundErrors = [
-        "User not found",
-        "Host not found",
-        "Driveway not found",
-        "Booking not found",
-        "No bookings found for this renter",
-        "No driveways found",
-        "Stripe account not found for this user"
-    ];
+  // -------------------------
+  // 401 — UNAUTHORIZED
+  // -------------------------
+  if (err.message === "Email or password invalid!") {
+    return res.status(401).json(
+      responseWrapper(false, null, "Email or password you entered aren't correct")
+    );
+  }
 
-    if (notFoundErrors.includes(err.message)) {
-        return res.status(404).json({ error: err.message });
-    }
+  // -------------------------
+  // 404 — NOT FOUND
+  // -------------------------
+  const notFoundErrors = [
+    "User not found",
+    "Host not found",
+    "Driveway not found",
+    "Booking not found",
+    "No bookings found for this renter",
+    "No driveways found",
+    "Stripe account not found for this user"
+  ];
 
-    // -------------------------
-    // 400 — STRIPE ONBOARDING ERRORS
-    // -------------------------
-    const stripeErrors = [
-        "Host has not started Stripe onboarding yet",
-        "Host has not completed Stripe onboarding"
-    ];
+  if (notFoundErrors.includes(err.message)) {
+    return res.status(404).json(
+      responseWrapper(false, null, err.message)
+    );
+  }
 
-    if (stripeErrors.includes(err.message)) {
-        return res.status(400).json({ error: err.message });
-    }
+  // -------------------------
+  // 400 — STRIPE ERRORS
+  // -------------------------
+  const stripeErrors = [
+    "Host has not started Stripe onboarding yet",
+    "Host has not completed Stripe onboarding"
+  ];
 
-    // -------------------------
-    // 500 — INTERNAL SERVER ERROR
-    // -------------------------
-    return res.status(500).json({
-        error: "Internal server error",
-        details: err.message
-    });
+  if (stripeErrors.includes(err.message)) {
+    return res.status(400).json(
+      responseWrapper(false, null, err.message)
+    );
+  }
+
+  // -------------------------
+  // 500 — INTERNAL SERVER ERROR
+  // -------------------------
+  const serverErrors = [
+  "Error fetching games",
+  "Error fetching driveways",
+  "Database query failed"
+];
+
+if (serverErrors.includes(err.message)) {
+  return res.status(500).json(
+    responseWrapper(false, null, err.message)
+  );
+}
+
+  return res.status(500).json(
+    responseWrapper(false, null, "Internal server error")
+  );
 }
 
 export default errorHandler;
