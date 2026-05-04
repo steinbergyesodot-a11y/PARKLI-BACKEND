@@ -17,14 +17,17 @@ export async function verifyTurnstile(req: Request, res: Response, next: NextFun
     }
 
     // Verify with Cloudflare
-    const result = await axios.post(
-      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-      new URLSearchParams({
-        secret: secretKey,
-        response: token,
-        remoteip: req.ip || ""
-      })
-    );
+const result = await axios.post(
+  "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+  new URLSearchParams({
+    secret: secretKey,
+    response: token,
+    remoteip: req.ip || ""
+  }),
+  {
+    headers: { "Content-Type": "application/x-www-form-urlencoded" }
+  }
+);
 
     if (!result.data.success) {
       return res.status(403).json({

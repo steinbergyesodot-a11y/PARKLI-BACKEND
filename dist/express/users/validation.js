@@ -7,6 +7,7 @@ exports.userSchemaZod = zod_1.z.object({
     lastName: zod_1.z.string().min(1, "Last name is required").max(50).trim(),
     email: zod_1.z.string().email().max(100).trim().toLowerCase(),
     password: zod_1.z.string().min(8, "Password must be at least 8 characters"),
+    token: zod_1.z.string().optional(),
 }).strict();
 exports.loginSchemaZod = zod_1.z.object({
     email: zod_1.z.string().email("Invalid email format").trim().toLowerCase(),
