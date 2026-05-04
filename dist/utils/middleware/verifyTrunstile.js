@@ -23,7 +23,9 @@ async function verifyTurnstile(req, res, next) {
             secret: secretKey,
             response: token,
             remoteip: req.ip || ""
-        }));
+        }), {
+            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+        });
         if (!result.data.success) {
             return res.status(403).json({
                 success: false,
