@@ -5,6 +5,8 @@ export const userSchemaZod = z.object({
   lastName: z.string().min(1, "Last name is required").max(50).trim(),
   email: z.string().email().max(100).trim().toLowerCase(),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  token: z.string().optional(),
+
 }).strict();
 
 

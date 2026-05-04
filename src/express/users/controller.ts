@@ -28,7 +28,7 @@ export async function addUser(req: Request, res: Response, next: NextFunction) {
 
     const firstName = clean(data.firstName);
     const lastName = clean(data.lastName);
-    const email = clean(data.email);
+    const email = clean(data.email).toLowerCase().trim();
 
     logger.info({
       message: "Attempting to create user",

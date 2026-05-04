@@ -39,7 +39,7 @@ async function addUser(req, res, next) {
         const data = validation_1.userSchemaZod.parse(req.body);
         const firstName = (0, sanitizeHTML_1.clean)(data.firstName);
         const lastName = (0, sanitizeHTML_1.clean)(data.lastName);
-        const email = (0, sanitizeHTML_1.clean)(data.email);
+        const email = (0, sanitizeHTML_1.clean)(data.email).toLowerCase().trim();
         logger_1.logger.info({
             message: "Attempting to create user",
             email,
