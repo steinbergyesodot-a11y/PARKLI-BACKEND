@@ -508,7 +508,7 @@ export async function updateDrivewayById(req: Request, res: Response, next: Next
         return res
            .status(201)
            .json(
-            responseWrapper(true,updateDriveway,null)
+            responseWrapper(true,updatedDriveway,null)
            )
 
     } catch (error: any) {
