@@ -16,7 +16,7 @@ import crypto from 'crypto'
 import { Resend } from 'resend';
 
 
-export async function addUser(req: Request, res: Response, next: NextFunction) {
+export async function signup(req: Request, res: Response, next: NextFunction) {
 
   logger.info({
     message: "addUser called",
@@ -63,15 +63,107 @@ export async function addUser(req: Request, res: Response, next: NextFunction) {
       ip: req.ip
     });
 
+    const payload = {
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      _id: newUser._id,
+      roles: newUser.roles,
+      email: newUser.email,
+      drivewayIds: newUser.drivewayIds,
+      authProvider: newUser.authProvider
+    };
+
+    if (!process.env.JWT_SECRET_KEY) {
+      throw new Error("JWT_SECRET is not defined in environment variables");
+    }
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
+      expiresIn: "1h"
+    });
+
+    if (!process.env.JWT_REFRESH_SECRET_KEY) {
+      throw new Error("JWT_REFRESH_SECRET_KEY is not defined in environment variables");
+    }
+
+    const refreshToken = jwt.sign({ _id: newUser._id }, process.env.JWT_REFRESH_SECRET_KEY, {
+      expiresIn: "7d"
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
     return res
        .status(201)
        .json(
-        responseWrapper(true,{id: newUser._id, email: newUser.email}, null)
+        responseWrapper(true,{
+          user: {
+            _id: newUser._id,
+            firstName: newUser.firstName,
+            lastName: newUser.lastName,
+            email: newUser.email
+          },
+          token
+        }, null)
        )
 
   } catch (err: any) {
     logger.error({
       message: "Error in addUser",
+      error: err.message,
+      stack: err.stack,
+      ip: req.ip
+    });
+    return next(err);
+  }
+}
+
+
+export async function refresh(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!process.env.JWT_SECRET_KEY || !process.env.JWT_REFRESH_SECRET_KEY) {
+      throw new Error("JWT secrets are not defined in environment variables");
+    }
+
+    const cookieHeader = req.headers.cookie || "";
+    const match = cookieHeader.split(";").map(c => c.trim()).find(c => c.startsWith("refreshToken="));
+    const refreshToken = match ? decodeURIComponent(match.slice("refreshToken=".length)) : null;
+
+    if (!refreshToken) {
+      return res.status(401).json(responseWrapper(false, null, "Missing refresh token"));
+    }
+
+    let decoded: any;
+    try {
+      decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET_KEY);
+    } catch {
+      return res.status(401).json(responseWrapper(false, null, "Invalid refresh token"));
+    }
+
+    const user = await UsersManager.getUserById(decoded._id);
+    if (!user) {
+      return res.status(401).json(responseWrapper(false, null, "Invalid refresh token"));
+    }
+
+    const payload = {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      _id: user._id,
+      roles: user.roles,
+      email: user.email,
+      drivewayIds: user.drivewayIds,
+      authProvider: user.authProvider
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, { expiresIn: "1h" });
+
+    return res.status(200).json(responseWrapper(true, { token }, null));
+  } catch (err: any) {
+    logger.error({
+      message: "Error in refresh",
       error: err.message,
       stack: err.stack,
       ip: req.ip
@@ -294,30 +386,30 @@ export async function Login(req: Request, res: Response, next: NextFunction) {
     try {
         const userFound = await UsersManager.Login(email, password);
 
-        if (!userFound.success) {
+        // if (!userFound.success) {
             // Log detailed failed login information
-            logger.warn({
-                message: "Login failed",
-                email,
-                ip: req.ip,
-                reason: userFound.message,
-                isLocked: userFound.isLocked || false,
-                failedAttempts: userFound.failedAttempts || 0,
-                accountLocked: userFound.accountLocked || false
-            });
+            // logger.warn({
+            //     message: "Login failed",
+            //     email,
+            //     ip: req.ip,
+            //     reason: userFound.message,
+            //     isLocked: userFound.isLocked || false,
+            //     failedAttempts: userFound.failedAttempts || 0,
+            //     accountLocked: userFound.accountLocked || false
+            // });
 
             // If account is now locked, alert the user
-            if (userFound.accountLocked) {
-                logger.warn({
-                    message: "SECURITY: Account locked due to multiple failed login attempts",
-                    email,
-                    ip: req.ip,
-                    failedAttempts: userFound.failedAttempts
-                });
-            }
+            // if (userFound.accountLocked) {
+            //     logger.warn({
+            //         message: "SECURITY: Account locked due to multiple failed login attempts",
+            //         email,
+            //         ip: req.ip,
+            //         failedAttempts: userFound.failedAttempts
+            //     });
+            // }
 
-            return next(new Error(userFound.message || "Email or password invalid!"));
-        }
+            // return next(new Error(userFound.message || "Email or password invalid!"));
+        // }
 
         if (!userFound.user) {
             logger.warn({

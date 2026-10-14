@@ -120,7 +120,7 @@ export async function addDriveway(req: Request, res: Response, next: NextFunctio
       await user.save();
     }
 
-    const returnUrl = `${process.env.FRONTEND_URL}/Onboard-Complete`;
+    const returnUrl = `${process.env.FRONTEND_URL}/Onboarding-Complete`;
     const refreshUrl = `${process.env.FRONTEND_URL}/Onboard-Retry`;
 
     const onboardingLink = await stripe.accountLinks.create({

@@ -1,6 +1,6 @@
 import express from 'express'
 import { Router } from 'express'
-import { addUser, getAllUsers, getUserById, checkStripeVerification,Login,googleLogin,updateFirstName,updateLastName,updateEmail,checkStripeStatus,forgotPassword, resetPassword} from './controller';
+import { signup, getAllUsers, getUserById, checkStripeVerification,Login,googleLogin,updateFirstName,updateLastName,updateEmail,checkStripeStatus,forgotPassword, resetPassword, refresh} from './controller';
 import { authenticateToken } from '../../utils/middleware/authenticateToken';
 import { authorize } from '../../utils/middleware/authorize';
 import { requireUserOwnership } from '../../utils/middleware/ownershipMiddleware';
@@ -13,9 +13,9 @@ const usersRouter = express.Router();
 
 usersRouter.post(
     "/addUser",
-    verifyTurnstile,
-    signupRateLimitByIP(5, 60 * 60 * 1000),
-    addUser
+    //  verifyTurnstile,
+    // signupRateLimitByIP(5, 60 * 60 * 1000),
+    signup
 )
 
 usersRouter.get("/:userId",authenticateToken,requireUserOwnership,getUserById)
@@ -28,7 +28,9 @@ usersRouter.put("/:userId/email/:email",authenticateToken,requireUserOwnership,u
 
 usersRouter.get("/",authenticateToken,authorize,getAllUsers)
 
-usersRouter.post('/login',loginRateLimiter,Login)
+usersRouter.post('/login',Login)
+
+usersRouter.post('/refresh',refresh)
 
 usersRouter.post('/google-login',googleLogin)
 

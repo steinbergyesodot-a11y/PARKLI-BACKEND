@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema<IUser>({
          default: UserType.Guest,
         required: true 
     },
-     roles:{
+    roles:{
         type:[String],
         enum: ["renter", "host"],
         default: ["renter"]
@@ -52,9 +52,6 @@ const userSchema = new mongoose.Schema<IUser>({
     stripeOnboardingUrlExpires: {type: Date, required: false},
     passwordResetToken: {type: String, required: false},
     passwordResetExpires: {type: Number,required: false}
-
-  
-   
 })
 
 export const userModel = mongoose.model<IUser>('user', userSchema);
