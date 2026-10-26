@@ -112,7 +112,7 @@ async function addDriveway(req, res, next) {
             user.isStripeVerified = false;
             await user.save();
         }
-        const returnUrl = `${process.env.FRONTEND_URL}/Onboard-Complete`;
+        const returnUrl = `${process.env.FRONTEND_URL}/Onboarding-Complete`;
         const refreshUrl = `${process.env.FRONTEND_URL}/Onboard-Retry`;
         const onboardingLink = await stripe_1.stripe.accountLinks.create({
             account: user.stripeAccountId,
@@ -439,7 +439,7 @@ async function updateDrivewayById(req, res, next) {
         });
         return res
             .status(201)
-            .json((0, responseWrapper_1.responseWrapper)(true, updateDriveway, null));
+            .json((0, responseWrapper_1.responseWrapper)(true, updatedDriveway, null));
     }
     catch (error) {
         logger_1.logger.error({

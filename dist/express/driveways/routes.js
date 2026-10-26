@@ -17,7 +17,8 @@ drivewayRouter.get('/', controller_1.getAllDriveways);
 drivewayRouter.get('/:drivewayId', controller_1.getDrivewayById);
 drivewayRouter.get('/getGames/:drivewayId', authenticateToken_1.authenticateToken, controller_1.getGamesByDrivewayId);
 drivewayRouter.get('/rules/:drivewayId', authenticateToken_1.authenticateToken, controller_1.getAllRulesByDrivewayId);
-drivewayRouter.get('/getAllDrivewaysByUserId/:userId', authenticateToken_1.authenticateToken, ownershipMiddleware_1.requireUserOwnership, controller_1.getAllDrivewaysByUserId);
+// drivewayRouter.get('/getAllDrivewaysByUserId/:userId',authenticateToken,requireUserOwnership,getAllDrivewaysByUserId) 
+drivewayRouter.get('/getAllDrivewaysByUserId/:userId', controller_1.getAllDrivewaysByUserId);
 drivewayRouter.put('/:drivewayId/:gameDate', authenticateToken_1.authenticateToken, controller_1.updateDrivewayById);
 drivewayRouter.put('/:drivewayId', authenticateToken_1.authenticateToken, controller_1.updateDriveway);
 drivewayRouter.put('/:drivewayId/block/:gameDate', authenticateToken_1.authenticateToken, ownershipMiddleware_1.requireDrivewayOwnership, controller_1.blockGame);

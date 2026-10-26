@@ -3,7 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addUser = addUser;
+exports.signup = signup;
+exports.refresh = refresh;
 exports.getUserById = getUserById;
 exports.getAllUsers = getAllUsers;
 exports.deleteUserById = deleteUserById;
@@ -30,7 +31,7 @@ const logger_1 = require("../../utils/logger/logger");
 const responseWrapper_1 = require("../../utils/responseWrapper");
 const crypto_1 = __importDefault(require("crypto"));
 const resend_1 = require("resend");
-async function addUser(req, res, next) {
+async function signup(req, res, next) {
     logger_1.logger.info({
         message: "addUser called",
         ip: req.ip
@@ -68,13 +69,92 @@ async function addUser(req, res, next) {
             email,
             ip: req.ip
         });
+        const payload = {
+            firstName: newUser.firstName,
+            lastName: newUser.lastName,
+            _id: newUser._id,
+            roles: newUser.roles,
+            email: newUser.email,
+            drivewayIds: newUser.drivewayIds,
+            authProvider: newUser.authProvider
+        };
+        if (!process.env.JWT_SECRET_KEY) {
+            throw new Error("JWT_SECRET is not defined in environment variables");
+        }
+        const token = jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET_KEY, {
+            expiresIn: "1h"
+        });
+        if (!process.env.JWT_REFRESH_SECRET_KEY) {
+            throw new Error("JWT_REFRESH_SECRET_KEY is not defined in environment variables");
+        }
+        const refreshToken = jsonwebtoken_1.default.sign({ _id: newUser._id }, process.env.JWT_REFRESH_SECRET_KEY, {
+            expiresIn: "7d"
+        });
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
         return res
             .status(201)
-            .json((0, responseWrapper_1.responseWrapper)(true, { id: newUser._id, email: newUser.email }, null));
+            .json((0, responseWrapper_1.responseWrapper)(true, {
+            user: {
+                _id: newUser._id,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
+                email: newUser.email
+            },
+            token
+        }, null));
     }
     catch (err) {
         logger_1.logger.error({
             message: "Error in addUser",
+            error: err.message,
+            stack: err.stack,
+            ip: req.ip
+        });
+        return next(err);
+    }
+}
+async function refresh(req, res, next) {
+    try {
+        if (!process.env.JWT_SECRET_KEY || !process.env.JWT_REFRESH_SECRET_KEY) {
+            throw new Error("JWT secrets are not defined in environment variables");
+        }
+        const cookieHeader = req.headers.cookie || "";
+        const match = cookieHeader.split(";").map(c => c.trim()).find(c => c.startsWith("refreshToken="));
+        const refreshToken = match ? decodeURIComponent(match.slice("refreshToken=".length)) : null;
+        if (!refreshToken) {
+            return res.status(401).json((0, responseWrapper_1.responseWrapper)(false, null, "Missing refresh token"));
+        }
+        let decoded;
+        try {
+            decoded = jsonwebtoken_1.default.verify(refreshToken, process.env.JWT_REFRESH_SECRET_KEY);
+        }
+        catch {
+            return res.status(401).json((0, responseWrapper_1.responseWrapper)(false, null, "Invalid refresh token"));
+        }
+        const user = await manager_1.UsersManager.getUserById(decoded._id);
+        if (!user) {
+            return res.status(401).json((0, responseWrapper_1.responseWrapper)(false, null, "Invalid refresh token"));
+        }
+        const payload = {
+            firstName: user.firstName,
+            lastName: user.lastName,
+            _id: user._id,
+            roles: user.roles,
+            email: user.email,
+            drivewayIds: user.drivewayIds,
+            authProvider: user.authProvider
+        };
+        const token = jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET_KEY, { expiresIn: "1h" });
+        return res.status(200).json((0, responseWrapper_1.responseWrapper)(true, { token }, null));
+    }
+    catch (err) {
+        logger_1.logger.error({
+            message: "Error in refresh",
             error: err.message,
             stack: err.stack,
             ip: req.ip
@@ -243,28 +323,28 @@ async function Login(req, res, next) {
     });
     try {
         const userFound = await manager_1.UsersManager.Login(email, password);
-        if (!userFound.success) {
-            // Log detailed failed login information
-            logger_1.logger.warn({
-                message: "Login failed",
-                email,
-                ip: req.ip,
-                reason: userFound.message,
-                isLocked: userFound.isLocked || false,
-                failedAttempts: userFound.failedAttempts || 0,
-                accountLocked: userFound.accountLocked || false
-            });
-            // If account is now locked, alert the user
-            if (userFound.accountLocked) {
-                logger_1.logger.warn({
-                    message: "SECURITY: Account locked due to multiple failed login attempts",
-                    email,
-                    ip: req.ip,
-                    failedAttempts: userFound.failedAttempts
-                });
-            }
-            return next(new Error(userFound.message || "Email or password invalid!"));
-        }
+        // if (!userFound.success) {
+        // Log detailed failed login information
+        // logger.warn({
+        //     message: "Login failed",
+        //     email,
+        //     ip: req.ip,
+        //     reason: userFound.message,
+        //     isLocked: userFound.isLocked || false,
+        //     failedAttempts: userFound.failedAttempts || 0,
+        //     accountLocked: userFound.accountLocked || false
+        // });
+        // If account is now locked, alert the user
+        // if (userFound.accountLocked) {
+        //     logger.warn({
+        //         message: "SECURITY: Account locked due to multiple failed login attempts",
+        //         email,
+        //         ip: req.ip,
+        //         failedAttempts: userFound.failedAttempts
+        //     });
+        // }
+        // return next(new Error(userFound.message || "Email or password invalid!"));
+        // }
         if (!userFound.user) {
             logger_1.logger.warn({
                 message: "Login failed: user object missing",

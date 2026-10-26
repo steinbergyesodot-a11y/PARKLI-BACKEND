@@ -8,17 +8,18 @@ const controller_1 = require("./controller");
 const authenticateToken_1 = require("../../utils/middleware/authenticateToken");
 const authorize_1 = require("../../utils/middleware/authorize");
 const ownershipMiddleware_1 = require("../../utils/middleware/ownershipMiddleware");
-const rateLimit_1 = require("../../utils/middleware/rateLimit");
-const signupRateLimit_1 = require("../../utils/middleware/signupRateLimit");
-const verifyTrunstile_1 = require("../../utils/middleware/verifyTrunstile");
 const usersRouter = express_1.default.Router();
-usersRouter.post("/addUser", verifyTrunstile_1.verifyTurnstile, (0, signupRateLimit_1.signupRateLimitByIP)(5, 60 * 60 * 1000), controller_1.addUser);
+usersRouter.post("/addUser", 
+//  verifyTurnstile,
+// signupRateLimitByIP(5, 60 * 60 * 1000),
+controller_1.signup);
 usersRouter.get("/:userId", authenticateToken_1.authenticateToken, ownershipMiddleware_1.requireUserOwnership, controller_1.getUserById);
 usersRouter.put("/:userId/firstName/:firstName", authenticateToken_1.authenticateToken, ownershipMiddleware_1.requireUserOwnership, controller_1.updateFirstName);
 usersRouter.put("/:userId/lastName/:lastName", authenticateToken_1.authenticateToken, ownershipMiddleware_1.requireUserOwnership, controller_1.updateLastName);
 usersRouter.put("/:userId/email/:email", authenticateToken_1.authenticateToken, ownershipMiddleware_1.requireUserOwnership, controller_1.updateEmail);
 usersRouter.get("/", authenticateToken_1.authenticateToken, authorize_1.authorize, controller_1.getAllUsers);
-usersRouter.post('/login', rateLimit_1.loginRateLimiter, controller_1.Login);
+usersRouter.post('/login', controller_1.Login);
+usersRouter.post('/refresh', controller_1.refresh);
 usersRouter.post('/google-login', controller_1.googleLogin);
 usersRouter.get('/stripe/check-status', authenticateToken_1.authenticateToken, controller_1.checkStripeStatus);
 usersRouter.get('/:userId/stripe-verification', controller_1.checkStripeVerification);

@@ -29,8 +29,10 @@ async function getCubsHomeGames() {
         params: {
             sportId: 1,
             teamId: CUBS_ID,
-            startDate: "2026-04-01",
-            endDate: "2026-07-30",
+            season: 2026,
+            gameType: "R",
+            startDate: "2026-01-01",
+            endDate: "2026-12-31",
         },
     });
     const games = [];
